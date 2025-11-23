@@ -62,10 +62,40 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/emails", async (req, res) => {
     try {
       const agentMail = await getUncachableAgentMailClient();
-      const response: any = await (agentMail as any).emails.list();
+      
+      // First, get list of inboxes
+      let inboxesResponse: any;
+      try {
+        inboxesResponse = await (agentMail as any).inboxes.list();
+      } catch (inboxError: any) {
+        console.warn("Failed to list inboxes:", inboxError.message);
+        // Return empty response instead of error if AgentMail is not configured
+        return res.json({ emails: [], threads: [], total: 0 });
+      }
+      
+      const inboxes = Array.isArray(inboxesResponse?.inboxes) ? inboxesResponse.inboxes : [];
+      
+      // If no inboxes, return empty response
+      if (inboxes.length === 0) {
+        console.log("No inboxes found in AgentMail");
+        return res.json({ emails: [], threads: [], total: 0 });
+      }
+      
+      // Fetch messages from all inboxes (or just the first one for now)
+      const firstInbox = inboxes[0];
+      console.log(`Fetching messages from inbox: ${firstInbox.id}`);
+      
+      let messagesResponse: any;
+      try {
+        messagesResponse = await (agentMail as any).inboxes.messages.list(firstInbox.id);
+      } catch (messagesError: any) {
+        console.warn("Failed to fetch messages:", messagesError.message);
+        return res.json({ emails: [], threads: [], total: 0 });
+      }
       
       // Defensive parsing with type validation
-      const rawEmails = Array.isArray(response?.emails) ? response.emails : [];
+      const rawEmails = Array.isArray(messagesResponse?.messages) ? messagesResponse.messages : [];
+      console.log(`Found ${rawEmails.length} messages`);
       
       // Validate each email and add threadId
       const validatedEmails = rawEmails
@@ -123,7 +153,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         new Date(b.lastReceivedAt).getTime() - new Date(a.lastReceivedAt).getTime()
       );
       
-      const total = typeof response?.total === 'number' ? response.total : validatedEmails.length;
+      const total = typeof messagesResponse?.total === 'number' ? messagesResponse.total : validatedEmails.length;
       
       res.json({ emails: validatedEmails, threads, total });
     } catch (error) {
