@@ -1,0 +1,33 @@
+Master Replit Build Prompt: SaaS Demo App – Marketplace Review & Complaint Manager
+"Build a clean, interactive, and visually appealing React-based SaaS demo app for centralized management of customer reviews and complaints. The application should cater to small businesses seeking a single dashboard to aggregate, analyze, and respond to customer feedback from ecommerce and marketplace platforms.
+Core Requirements:
+Review Aggregation:
+Integrate with the Axesso API to fetch latest customer reviews and complaints from Amazon and eBay (mock Shopify, PayPal, Alibaba, and Website data via sample CSV/JSON upload if API is unavailable).
+Unified Dashboard:
+Display all imported reviews in a single, filterable dashboard. Allow sorting and filtering by source marketplace, severity, sentiment, and date.
+AI-Powered Analysis:
+Use the Grok 4.1 Fast LLM to:
+Categorize reviews by issue (e.g., shipping, defect, service) and severity.
+Analyze sentiment (positive/neutral/negative) and identify root causes or recurring themes.
+Auto-generate suggested professional reply text for each review, editable before sending.
+Case Management Workflow:
+Implement a Kanban or swimlane board where reviews can be moved through statuses: Open, In Progress, and Resolved. Allow manual reassignment and marking of cases as agentic (auto-resolution) or for human review.
+Analytics:
+Visualize review insights (sentiment trends, most frequent issues, resolution rates) via integrated Chart.js graphs. Provide summary stats at the top of the dashboard.
+Interactive UI:
+Clean, minimalist layout with sidebar/menu for source selection.
+Review cards with badges for category, sentiment, and severity.
+Expandable detail/modal view for each review, showing full thread.
+Inline editing for AI-suggested responses.
+User Customization:
+Allow light/dark theme switching and basic personalization of the dashboard layout.
+Demo Data Support:
+If live API data is unavailable, provide "Load Demo Data" and upload functionality for mock CSV/JSON review data.
+Security & Logging:
+For the demo, include a basic login screen (fake authentication). Log all app actions to a side panel or console for transparency/demoing.
+Technology Stack Constraints:
+All components and logic must run within Replit.
+No external hosting, no additional LLMs, and no platforms beyond approved APIs and front-end packages.
+Use React, Tailwind CSS (or equivalent light CSS), and Chart.js. Axesso API for live pulls, mock Grok 4.1 Fast integration for AI elements.
+Deliverable:
+A working Replit project meeting the above, with clean, commented code, demo-ready sample data, and intuitive UX suitable for stakeholder walkthroughs."
