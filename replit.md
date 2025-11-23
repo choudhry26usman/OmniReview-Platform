@@ -18,6 +18,38 @@ Preferred communication style: Simple, everyday language.
 
 ## Recent Changes
 
+### November 23, 2025 - Settings Page & Integration Management
+
+**Settings Page:**
+- Created comprehensive Settings page at `/settings` for managing integrations and application preferences
+- Displays real-time connection status for all three external integrations (AgentMail, Outlook, OpenRouter)
+- Integration status cards with visual indicators (Connected/Disconnected badges)
+- Test Connection functionality to verify integration health
+- External links to Replit integrations panel for configuration
+- Refresh Status button to update all integration statuses simultaneously
+
+**API Endpoint:**
+- Implemented `/api/integrations/status` endpoint to check connection status for all integrations
+- Returns detailed status information including:
+  - Connection state (connected/disconnected)
+  - Integration-specific details (user info, API key status, error messages)
+  - Graceful error handling for unconfigured integrations
+
+**Technical Implementation:**
+- Created `client/src/pages/Settings.tsx` component with integration status display
+- Added API endpoint in `server/routes.ts` with status checks for AgentMail, Outlook, and OpenRouter
+- Integration cards use Shadcn Card components with color-coded badges
+- Test Connection buttons use React Query refetch with fresh data for accurate status updates
+- Toast notifications provide user feedback for connection tests
+- Added Settings to sidebar navigation and router
+
+**Testing:**
+- End-to-end tested Settings page navigation and display
+- Verified integration status cards render correctly
+- Confirmed Test Connection functionality with fresh data from refetch
+- Tested Refresh Status button with proper loading states
+- Validated navigation between Settings and other pages
+
 ### November 23, 2025 - Marketplace Filtering & Import Reviews
 
 **Marketplace Filtering:**
@@ -131,6 +163,7 @@ Preferred communication style: Simple, everyday language.
   - `/api/send-email`: Send emails via Outlook integration
   - `/api/generate-reply`: AI-powered customer service response generation using Grok 4.1 Fast
   - `/api/analyze-review`: AI analysis for sentiment, severity, and category (available for future use)
+  - `/api/integrations/status`: Connection status check for all external integrations (AgentMail, Outlook, OpenRouter)
 - Custom logging middleware for request/response tracking
 - JSON request/response handling with raw body access for webhooks
 - Graceful error handling with fallback to empty responses for missing integrations
