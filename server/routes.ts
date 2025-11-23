@@ -297,7 +297,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         });
       }
 
-      console.log(`Processing ${result.reviews.length} reviews from Amazon...`);
+      // Extract product info from the result
+      const productName = (result as any).productTitle || `Amazon Product ${asin}`;
+      
+      console.log(`Processing ${result.reviews.length} reviews for "${productName}"...`);
       
       // Process each review through AI
       const processedReviews = [];
@@ -357,11 +360,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       global.importedReviews.push(...processedReviews);
 
-      console.log(`✓ Successfully imported ${processedReviews.length} reviews`);
+      // Track the product
+      if (!global.trackedProducts) {
+        global.trackedProducts = [];
+      }
+      
+      // Check if product already exists, update or add
+      const existingProductIndex = global.trackedProducts.findIndex(
+        p => p.productId === asin && p.platform === "Amazon"
+      );
+      
+      if (existingProductIndex >= 0) {
+        global.trackedProducts[existingProductIndex] = {
+          ...global.trackedProducts[existingProductIndex],
+          reviewCount: global.trackedProducts[existingProductIndex].reviewCount + processedReviews.length,
+          lastImported: new Date(),
+        };
+      } else {
+        global.trackedProducts.push({
+          id: `product-${asin}`,
+          platform: "Amazon",
+          productId: asin,
+          productName,
+          reviewCount: processedReviews.length,
+          lastImported: new Date(),
+        });
+      }
+
+      console.log(`✓ Successfully imported ${processedReviews.length} reviews for "${productName}"`);
       
       res.json({
         imported: processedReviews.length,
         asin,
+        productName,
         reviews: processedReviews
       });
     } catch (error: any) {
@@ -407,6 +438,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Failed to fetch imported reviews:", error);
       res.status(500).json({ error: "Failed to fetch imported reviews" });
+    }
+  });
+
+  // Get all tracked products
+  app.get("/api/products/tracked", async (req, res) => {
+    try {
+      const products = global.trackedProducts || [];
+      res.json({ products, total: products.length });
+    } catch (error: any) {
+      console.error("Failed to fetch tracked products:", error);
+      res.status(500).json({ error: "Failed to fetch tracked products" });
     }
   });
 

@@ -5,7 +5,7 @@ import { StatCard } from "@/components/StatCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ReviewDetailModal } from "@/components/ReviewDetailModal";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
-import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Inbox, ChevronDown, ChevronRight } from "lucide-react";
+import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Inbox, ChevronDown, ChevronRight, Package } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -14,6 +14,7 @@ import type { EmailListResponse, Email, EmailThread } from "@shared/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { SiAmazon } from "react-icons/si";
 
 // Mock reviews removed - now using only real imported reviews from Amazon/other sources
 const mockReviews: any[] = [];
@@ -54,6 +55,20 @@ export default function Dashboard() {
 
   const { data: importedReviewsData } = useQuery<{ reviews: typeof mockReviews; total: number }>({
     queryKey: ["/api/reviews/imported"],
+  });
+
+  const { data: productsData } = useQuery<{ 
+    products: Array<{
+      id: string;
+      platform: string;
+      productId: string;
+      productName: string;
+      reviewCount: number;
+      lastImported: string;
+    }>; 
+    total: number 
+  }>({
+    queryKey: ["/api/products/tracked"],
   });
 
   const allReviews = useMemo(() => {
@@ -138,6 +153,61 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
+
+      {productsData && productsData.products.length > 0 && (
+        <Card data-testid="card-tracked-products">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Package className="h-5 w-5" />
+                Tracked Products
+              </CardTitle>
+              <CardDescription>
+                Products you're monitoring for reviews and feedback
+              </CardDescription>
+            </div>
+            <Badge variant="secondary" data-testid="badge-product-count">
+              {productsData.total} {productsData.total === 1 ? 'product' : 'products'}
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {productsData.products.map((product) => (
+                <Card key={product.id} className="hover-elevate" data-testid={`card-product-${product.productId}`}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 rounded-md bg-muted/50">
+                        {product.platform === "Amazon" && <SiAmazon className="h-5 w-5" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <Badge variant="outline" className="text-xs">
+                            {product.platform}
+                          </Badge>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {product.productId}
+                          </span>
+                        </div>
+                        <h4 className="text-sm font-medium line-clamp-2 mb-2" data-testid={`text-product-name-${product.productId}`}>
+                          {product.productName}
+                        </h4>
+                        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+                          <span data-testid={`text-review-count-${product.productId}`}>
+                            {product.reviewCount} {product.reviewCount === 1 ? 'review' : 'reviews'}
+                          </span>
+                          <span>
+                            Last: {new Date(product.lastImported).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard

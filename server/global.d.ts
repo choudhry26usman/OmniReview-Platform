@@ -16,6 +16,15 @@ declare global {
     verified?: boolean;
     asin?: string;
   }> | undefined;
+
+  var trackedProducts: Array<{
+    id: string;
+    platform: "Amazon" | "eBay" | "Shopify" | "PayPal" | "Alibaba" | "Website";
+    productId: string;
+    productName: string;
+    reviewCount: number;
+    lastImported: Date;
+  }> | undefined;
 }
 
 export {};

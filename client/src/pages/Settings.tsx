@@ -38,11 +38,12 @@ export default function Settings() {
     onSuccess: (data: any) => {
       toast({
         title: "Success!",
-        description: `Imported ${data.imported} reviews from Amazon. Check your Dashboard!`,
+        description: `Imported ${data.imported} reviews for "${data.productName}". Check your Dashboard!`,
       });
       setAsin("");
-      // Invalidate the imported reviews cache so Dashboard refreshes
+      // Invalidate the imported reviews and products cache so Dashboard refreshes
       queryClient.invalidateQueries({ queryKey: ["/api/reviews/imported"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/tracked"] });
     },
     onError: (error: any) => {
       toast({
