@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ReviewDetailModal } from "@/components/ReviewDetailModal";
+import { ImportReviewsModal } from "@/components/ImportReviewsModal";
 import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Inbox, ChevronDown, ChevronRight } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
@@ -115,6 +116,7 @@ export default function Dashboard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [dateFilter, setDateFilter] = useState("all");
   const [expandedThreads, setExpandedThreads] = useState<Set<string>>(new Set());
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const { toast } = useToast();
   
   const marketplaceFilter = useMemo(() => {
@@ -202,7 +204,11 @@ export default function Dashboard() {
             <RefreshCw className={`h-4 w-4 mr-2 ${isFetchingEmails ? 'animate-spin' : ''}`} />
             Sync Emails
           </Button>
-          <Button variant="outline" data-testid="button-import-reviews">
+          <Button 
+            variant="outline" 
+            onClick={() => setIsImportModalOpen(true)}
+            data-testid="button-import-reviews"
+          >
             <Upload className="h-4 w-4 mr-2" />
             Import Reviews
           </Button>
@@ -447,6 +453,11 @@ export default function Dashboard() {
           review={selectedReview}
         />
       )}
+
+      <ImportReviewsModal
+        open={isImportModalOpen}
+        onOpenChange={setIsImportModalOpen}
+      />
     </div>
   );
 }
