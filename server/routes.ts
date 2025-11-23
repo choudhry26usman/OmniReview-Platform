@@ -112,11 +112,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             return null;
           }
         })
-        .filter((email): email is z.infer<typeof emailSchema> => email !== null);
+        .filter((email: any): email is z.infer<typeof emailSchema> => email !== null);
       
       // Group emails into threads
       const threadsMap = new Map<string, z.infer<typeof emailSchema>[]>();
-      validatedEmails.forEach(email => {
+      validatedEmails.forEach((email: z.infer<typeof emailSchema>) => {
         const threadId = email.threadId || email.id;
         if (!threadsMap.has(threadId)) {
           threadsMap.set(threadId, []);
@@ -272,11 +272,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import Amazon reviews - fetch from Axesso and process through AI
   app.post("/api/amazon/import-reviews", async (req, res) => {
     try {
-      const { asin } = req.body;
+      let { asin } = req.body;
       
       if (!asin || typeof asin !== 'string') {
         return res.status(400).json({ error: "ASIN is required" });
       }
+      
+      // Sanitize ASIN: remove invisible Unicode characters, whitespace, and trim
+      asin = asin
+        .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '') // Remove invisible Unicode chars
+        .replace(/\s+/g, '') // Remove all whitespace
+        .trim();
+      
+      console.log(`Importing reviews for ASIN: ${asin}`);
       
       // Fetch reviews from Axesso
       const { getProductReviews } = await import("./integrations/axesso");

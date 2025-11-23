@@ -19,12 +19,17 @@ interface AxessoProduct {
 }
 
 interface AxessoReview {
-  reviewTitle: string;
-  reviewText: string;
+  title: string;
+  text: string;
   rating: string;
-  reviewerName: string;
-  reviewDate: string;
-  verified: boolean;
+  userName: string;
+  date: string;
+  reviewId: string;
+  url: string;
+  imageUrlList: string[];
+  variationList: string[];
+  locale: string | null;
+  profilePath: string;
 }
 
 interface AxessoSearchResult {
