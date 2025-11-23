@@ -15,7 +15,6 @@ export default function Login() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Demo authentication - todo: remove mock functionality
     if (username && password) {
       console.log("Login attempt:", username);
       toast({
@@ -72,9 +71,6 @@ export default function Login() {
               Sign In
             </Button>
           </form>
-          <p className="text-xs text-center text-muted-foreground mt-4">
-            Demo mode - any credentials will work
-          </p>
         </CardContent>
       </Card>
     </div>

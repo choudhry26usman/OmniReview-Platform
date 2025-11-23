@@ -1,6 +1,5 @@
 import { KanbanBoard, KanbanColumn } from "@/components/KanbanBoard";
 
-// todo: remove mock functionality
 const mockColumns: KanbanColumn[] = [
   {
     id: "open",

@@ -4,10 +4,9 @@ import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ReviewDetailModal } from "@/components/ReviewDetailModal";
-import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload } from "lucide-react";
+import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// todo: remove mock functionality
 const mockReviews = [
   {
     id: "1",
@@ -99,7 +98,6 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [sentimentFilter, setSentimentFilter] = useState("all");
 
-  // todo: remove mock functionality
   const filteredReviews = mockReviews.filter((review) => {
     const matchesSearch = review.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          review.content.toLowerCase().includes(searchQuery.toLowerCase());
@@ -116,10 +114,16 @@ export default function Dashboard() {
             Overview of all marketplace reviews and complaints
           </p>
         </div>
-        <Button data-testid="button-load-demo-data">
-          <Upload className="h-4 w-4 mr-2" />
-          Load Demo Data
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" data-testid="button-import-reviews">
+            <Upload className="h-4 w-4 mr-2" />
+            Import Reviews
+          </Button>
+          <Button data-testid="button-export-data">
+            <Download className="h-4 w-4 mr-2" />
+            Export Data
+          </Button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

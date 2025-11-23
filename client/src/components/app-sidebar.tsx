@@ -91,15 +91,15 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton data-testid="button-load-demo">
+                <SidebarMenuButton data-testid="button-import">
                   <Upload className="h-4 w-4" />
-                  <span>Load Demo Data</span>
+                  <span>Import Reviews</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton data-testid="button-filters">
                   <Filter className="h-4 w-4" />
-                  <span>Filters</span>
+                  <span>Advanced Filters</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
