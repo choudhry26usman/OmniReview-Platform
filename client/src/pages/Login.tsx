@@ -37,7 +37,7 @@ export default function Login() {
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-4">
             <img 
-              src="/attached_assets/Gemini_Generated_Image_u44rp3u44rp3u44r (1)_1763884957408.png" 
+              src="/attached_assets/image_1763885624491.png" 
               alt="DriftSignal Logo" 
               className="h-16 w-16 mx-auto"
             />

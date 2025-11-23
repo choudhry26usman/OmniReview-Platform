@@ -38,7 +38,7 @@ export function AppSidebar() {
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <img 
-            src="/attached_assets/Gemini_Generated_Image_u44rp3u44rp3u44r (1)_1763884957408.png" 
+            src="/attached_assets/image_1763885624491.png" 
             alt="DriftSignal Logo" 
             className="h-10 w-10"
           />
