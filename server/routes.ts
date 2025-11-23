@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getUncachableAgentMailClient } from "./integrations/agentmail";
 import { getUncachableOutlookClient } from "./integrations/outlook";
+import { analyzeReview, generateReply } from "./ai/service";
 import { z } from "zod";
 
 // Email validation schema
@@ -199,54 +200,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Generate AI reply using OpenRouter
-  app.post("/api/generate-reply", async (req, res) => {
+  // Analyze review with AI
+  app.post("/api/analyze-review", async (req, res) => {
     try {
-      const { reviewContent, sentiment, category } = req.body;
+      const { reviewContent, customerName, marketplace } = req.body;
 
       if (!reviewContent) {
         return res.status(400).json({ error: "Review content is required" });
       }
 
-      const prompt = `You are a professional customer service representative. Generate a professional, empathetic response to the following customer review.
+      const analysis = await analyzeReview(
+        reviewContent,
+        customerName || "Customer",
+        marketplace || "Unknown"
+      );
 
-Review: ${reviewContent}
-Sentiment: ${sentiment}
-Category: ${category}
+      res.json(analysis);
+    } catch (error) {
+      console.error("Error analyzing review:", error);
+      res.status(500).json({ error: "Failed to analyze review" });
+    }
+  });
 
-Generate a professional response that:
-1. Acknowledges the customer's concern
-2. Shows empathy and understanding
-3. Offers a solution or next steps
-4. Maintains a professional and helpful tone
-5. Is concise (2-3 paragraphs maximum)
+  // Generate AI reply
+  app.post("/api/generate-reply", async (req, res) => {
+    try {
+      const { reviewContent, customerName, marketplace, sentiment, severity } = req.body;
 
-Response:`;
-
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": process.env.REPLIT_DEPLOYMENT_URL || "http://localhost:5000",
-        },
-        body: JSON.stringify({
-          model: "x-ai/grok-2-1212",
-          messages: [
-            {
-              role: "user",
-              content: prompt,
-            },
-          ],
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`OpenRouter API error: ${response.statusText}`);
+      if (!reviewContent) {
+        return res.status(400).json({ error: "Review content is required" });
       }
 
-      const data = await response.json();
-      const reply = data.choices[0]?.message?.content || "Unable to generate response";
+      const reply = await generateReply(
+        reviewContent,
+        customerName || "Customer",
+        marketplace || "Unknown",
+        sentiment || "neutral",
+        severity || "medium"
+      );
 
       res.json({ reply });
     } catch (error) {

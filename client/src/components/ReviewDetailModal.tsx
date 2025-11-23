@@ -86,14 +86,16 @@ export function ReviewDetailModal({ open, onOpenChange, review }: ReviewDetailMo
     try {
       const response = await apiRequest("POST", "/api/generate-reply", {
         reviewContent: review.content,
+        customerName: review.customerName,
+        marketplace: review.marketplace,
         sentiment: review.sentiment,
-        category: review.category,
+        severity: review.severity,
       });
       const data = await response.json();
       setReplyText(data.reply);
       toast({
         title: "AI Reply Generated",
-        description: "Professional response has been generated using AI.",
+        description: "Professional response has been generated using Grok AI.",
       });
     } catch (error) {
       toast({
