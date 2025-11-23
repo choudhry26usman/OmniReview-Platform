@@ -2,7 +2,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
-import { Mail, Zap, CheckCircle, XCircle, ExternalLink, RefreshCw, Loader2 } from "lucide-react";
+import { Mail, Zap, CheckCircle, XCircle, ExternalLink, RefreshCw, Loader2, ShoppingCart } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 interface IntegrationStatus {
@@ -16,6 +16,7 @@ interface ConnectionStatusResponse {
   agentmail: IntegrationStatus;
   outlook: IntegrationStatus;
   openrouter: IntegrationStatus;
+  axesso: IntegrationStatus;
 }
 
 export default function Settings() {
@@ -271,6 +272,71 @@ export default function Settings() {
                     >
                       <ExternalLink className="h-3 w-3 mr-1" />
                       Configure in Replit
+                    </a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Axesso (Amazon Data) Integration */}
+            <Card data-testid="card-integration-axesso">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary/10 rounded-md">
+                      <ShoppingCart className="h-5 w-5 text-primary" />
+                    </div>
+                    <div>
+                      <CardTitle className="text-base">Axesso (Amazon Data)</CardTitle>
+                      <CardDescription>E-commerce data extraction from Amazon and other marketplaces</CardDescription>
+                    </div>
+                  </div>
+                  <Badge 
+                    variant={statusData?.axesso.connected ? "default" : "destructive"}
+                    data-testid="badge-axesso-status"
+                  >
+                    {statusData?.axesso.connected ? (
+                      <>
+                        <CheckCircle className="h-3 w-3 mr-1" />
+                        Connected
+                      </>
+                    ) : (
+                      <>
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Disconnected
+                      </>
+                    )}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {statusData?.axesso.details && (
+                  <p className="text-sm text-muted-foreground">
+                    {statusData.axesso.details}
+                  </p>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleTestConnection('axesso')}
+                    data-testid="button-test-axesso"
+                  >
+                    Test Connection
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    asChild
+                  >
+                    <a 
+                      href="https://replit.com/~/settings/secrets" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      data-testid="link-configure-axesso"
+                    >
+                      <ExternalLink className="h-3 w-3 mr-1" />
+                      Add API Key in Secrets
                     </a>
                   </Button>
                 </div>

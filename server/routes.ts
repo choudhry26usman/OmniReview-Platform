@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getUncachableAgentMailClient } from "./integrations/agentmail";
 import { getUncachableOutlookClient } from "./integrations/outlook";
+import { testAxessoConnection } from "./integrations/axesso";
 import { analyzeReview, generateReply } from "./ai/service";
 import { z } from "zod";
 
@@ -267,6 +268,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         details: "",
         lastChecked: new Date().toISOString(),
       },
+      axesso: {
+        name: "Axesso (Amazon Data)",
+        connected: false,
+        details: "",
+        lastChecked: new Date().toISOString(),
+      },
     };
 
     // Check AgentMail
@@ -304,6 +311,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       status.openrouter.connected = false;
       status.openrouter.details = error.message || "API key not configured";
+    }
+
+    // Check Axesso
+    try {
+      const result = await testAxessoConnection();
+      status.axesso.connected = result.connected;
+      status.axesso.details = result.details;
+    } catch (error: any) {
+      status.axesso.connected = false;
+      status.axesso.details = error.message || "API key not configured";
     }
 
     res.json(status);
