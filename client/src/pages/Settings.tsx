@@ -327,17 +327,16 @@ export default function Settings() {
                   <Button
                     variant="outline"
                     size="sm"
-                    asChild
+                    onClick={() => {
+                      toast({
+                        title: "Add API Key",
+                        description: "Open the Secrets tool in Replit, then add AXESSO_API_KEY with your RapidAPI key",
+                      });
+                    }}
+                    data-testid="link-configure-axesso"
                   >
-                    <a 
-                      href="https://replit.com/~/settings/secrets" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      data-testid="link-configure-axesso"
-                    >
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      Add API Key in Secrets
-                    </a>
+                    <ExternalLink className="h-3 w-3 mr-1" />
+                    How to Add API Key
                   </Button>
                 </div>
               </CardContent>
