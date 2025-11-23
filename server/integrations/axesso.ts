@@ -4,7 +4,7 @@
  * Documentation: https://axesso.de/ and https://rapidapi.com/axesso
  */
 
-const AXESSO_BASE_URL = 'https://axesso-amazon-data-service.p.rapidapi.com';
+const AXESSO_BASE_URL = 'https://axesso-axesso-amazon-data-service-v1.p.rapidapi.com';
 
 interface AxessoProduct {
   productTitle: string;
@@ -72,7 +72,7 @@ async function axessoRequest<T>(endpoint: string, params: Record<string, string>
     method: 'GET',
     headers: {
       'X-RapidAPI-Key': apiKey,
-      'X-RapidAPI-Host': 'axesso-amazon-data-service.p.rapidapi.com'
+      'X-RapidAPI-Host': 'axesso-axesso-amazon-data-service-v1.p.rapidapi.com'
     }
   });
 
@@ -140,23 +140,22 @@ export async function searchProducts(keyword: string, page: number = 1): Promise
 }
 
 /**
- * Get product reviews by Amazon URL or ASIN
+ * Get product details and reviews by Amazon URL or ASIN
  */
 export async function getProductReviews(asinOrUrl: string, page: number = 1): Promise<{ reviews: AxessoReview[] }> {
-  // If it's a URL, use url parameter; otherwise use asin parameter
-  const isUrl = asinOrUrl.startsWith('http');
-  const params: Record<string, string> = {
-    page: page.toString(),
-    domainCode: 'com'
-  };
+  // Convert ASIN to Amazon URL format
+  const url = asinOrUrl.startsWith('http') 
+    ? asinOrUrl 
+    : `https://www.amazon.com/dp/${asinOrUrl}`;
   
-  if (isUrl) {
-    params.url = asinOrUrl;
-  } else {
-    params.asin = asinOrUrl;
-  }
+  // Use the product lookup endpoint which includes reviews
+  const result = await axessoRequest<any>('/amz/amazon-lookup-product', { url });
   
-  return axessoRequest<{ reviews: AxessoReview[] }>('/amz/amazon-reviews', params);
+  // Extract reviews from the product details response
+  // Axesso returns reviews as part of the product data
+  const reviews = result.reviews || [];
+  
+  return { reviews };
 }
 
 /**
