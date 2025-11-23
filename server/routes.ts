@@ -247,6 +247,28 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Test Axesso by fetching real Amazon product reviews
+  app.post("/api/test-axesso", async (req, res) => {
+    try {
+      const { getProductReviews, searchProducts } = await import("./integrations/axesso");
+      const { amazonUrl, action } = req.body;
+
+      if (action === 'reviews' && amazonUrl) {
+        const reviews = await getProductReviews(amazonUrl, 1);
+        res.json({ success: true, data: reviews });
+      } else if (action === 'search') {
+        const keyword = req.body.keyword || 'laptop';
+        const results = await searchProducts(keyword, 1);
+        res.json({ success: true, data: results });
+      } else {
+        res.status(400).json({ error: "Invalid action or missing amazonUrl" });
+      }
+    } catch (error: any) {
+      console.error("Axesso test error:", error);
+      res.status(500).json({ error: error.message || "Failed to fetch data from Axesso" });
+    }
+  });
+
   // Check integration status
   app.get("/api/integrations/status", async (req, res) => {
     const status = {
