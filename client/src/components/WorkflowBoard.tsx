@@ -32,9 +32,10 @@ export interface WorkflowColumn {
 interface WorkflowBoardProps {
   columns: WorkflowColumn[];
   onReviewMove?: (reviewId: string, sourceColumn: string, destColumn: string) => void;
+  onCardClick?: (reviewId: string) => void;
 }
 
-export function WorkflowBoard({ columns: initialColumns, onReviewMove }: WorkflowBoardProps) {
+export function WorkflowBoard({ columns: initialColumns, onReviewMove, onCardClick }: WorkflowBoardProps) {
   const [columns, setColumns] = useState(initialColumns);
 
   const onDragEnd = (result: DropResult) => {
@@ -103,8 +104,9 @@ export function WorkflowBoard({ columns: initialColumns, onReviewMove }: Workflo
                             ref={provided.innerRef}
                             {...provided.draggableProps}
                             {...provided.dragHandleProps}
+                            onClick={() => onCardClick?.(review.id)}
                             className={cn(
-                              "cursor-grab active:cursor-grabbing",
+                              "cursor-grab active:cursor-grabbing hover-elevate",
                               snapshot.isDragging && "shadow-lg"
                             )}
                             data-testid={`workflow-card-${review.id}`}

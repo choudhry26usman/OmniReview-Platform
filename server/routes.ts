@@ -2,6 +2,20 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { getUncachableAgentMailClient } from "./integrations/agentmail";
 import { getUncachableOutlookClient } from "./integrations/outlook";
+import { z } from "zod";
+
+// Email validation schema
+const emailSchema = z.object({
+  id: z.string(),
+  from: z.object({
+    name: z.string().optional(),
+    email: z.string().email(),
+  }),
+  subject: z.string(),
+  body: z.string(),
+  receivedAt: z.string(),
+  read: z.boolean().optional(),
+});
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Fetch emails from AgentMail
@@ -11,10 +25,23 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const response = await agentMail.emails.list();
       
       // Defensive parsing with type validation
-      const emails = Array.isArray(response?.emails) ? response.emails : [];
-      const total = typeof response?.total === 'number' ? response.total : emails.length;
+      const rawEmails = Array.isArray(response?.emails) ? response.emails : [];
       
-      res.json({ emails, total });
+      // Validate each email and filter out invalid ones
+      const validatedEmails = rawEmails
+        .map((email: any) => {
+          try {
+            return emailSchema.parse(email);
+          } catch (validationError) {
+            console.warn("Invalid email record:", validationError);
+            return null;
+          }
+        })
+        .filter((email): email is z.infer<typeof emailSchema> => email !== null);
+      
+      const total = typeof response?.total === 'number' ? response.total : validatedEmails.length;
+      
+      res.json({ emails: validatedEmails, total });
     } catch (error) {
       console.error("Error fetching emails:", error);
       res.status(500).json({ error: "Failed to fetch emails", emails: [], total: 0 });

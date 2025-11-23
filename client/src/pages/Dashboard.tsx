@@ -4,10 +4,13 @@ import { Button } from "@/components/ui/button";
 import { StatCard } from "@/components/StatCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ReviewDetailModal } from "@/components/ReviewDetailModal";
-import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw } from "lucide-react";
+import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Inbox } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
+import type { EmailListResponse, Email } from "@shared/types";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 
 const mockReviews = [
   {
@@ -107,7 +110,7 @@ export default function Dashboard() {
   const [sentimentFilter, setSentimentFilter] = useState("all");
   const { toast } = useToast();
 
-  const { data: emailData, refetch: refetchEmails, isLoading: isLoadingEmails } = useQuery<{ emails: any[]; total: number }>({
+  const { data: emailData, refetch: refetchEmails, isFetching: isFetchingEmails, error: emailError } = useQuery<EmailListResponse>({
     queryKey: ["/api/emails"],
     enabled: false,
   });
@@ -115,7 +118,10 @@ export default function Dashboard() {
   const handleSyncEmails = async () => {
     try {
       const result = await refetchEmails();
-      const emailCount = result.data?.total || 0;
+      if (result.isError || !result.data) {
+        throw new Error("Failed to fetch emails");
+      }
+      const emailCount = result.data.total || 0;
       toast({
         title: "Emails Synced",
         description: `Successfully synced ${emailCount} emails from AgentMail inbox.`,
@@ -149,10 +155,10 @@ export default function Dashboard() {
           <Button 
             variant="outline" 
             onClick={handleSyncEmails}
-            disabled={isLoadingEmails}
+            disabled={isFetchingEmails}
             data-testid="button-sync-emails"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingEmails ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${isFetchingEmails ? 'animate-spin' : ''}`} />
             Sync Emails
           </Button>
           <Button variant="outline" data-testid="button-import-reviews">
@@ -195,6 +201,76 @@ export default function Dashboard() {
           testId="stat-resolved"
         />
       </div>
+
+      {emailData && emailData.emails && emailData.emails.length > 0 && (
+        <Card data-testid="card-email-inbox">
+          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Inbox className="h-5 w-5" />
+                Email Inbox
+              </CardTitle>
+              <CardDescription>
+                Product review emails from AgentMail
+              </CardDescription>
+            </div>
+            <Badge variant="secondary" data-testid="badge-email-count">
+              {emailData.total} emails
+            </Badge>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {emailData.emails.slice(0, 5).map((email: Email) => (
+                <div 
+                  key={email.id} 
+                  className="flex items-start gap-3 p-3 rounded-lg border hover-elevate active-elevate-2 cursor-pointer"
+                  data-testid={`email-item-${email.id}`}
+                >
+                  <Mail className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <p className="text-sm font-medium truncate">{email.from.name || email.from.email}</p>
+                      {!email.read && <Badge variant="default" className="text-xs">New</Badge>}
+                    </div>
+                    <p className="text-sm font-medium truncate mb-1">{email.subject}</p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{email.body}</p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(email.receivedAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+            {emailData.total > 5 && (
+              <p className="text-sm text-muted-foreground text-center mt-4">
+                Showing 5 of {emailData.total} emails
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
+      {isFetchingEmails && !emailData && (
+        <Card>
+          <CardContent className="py-12">
+            <div className="flex flex-col items-center justify-center gap-3">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">Loading emails...</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {emailError && (
+        <Card className="border-destructive">
+          <CardContent className="py-6">
+            <div className="flex items-center gap-3 text-destructive">
+              <Mail className="h-5 w-5" />
+              <p className="text-sm">Failed to load emails. Please try syncing again.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       <div className="flex gap-4 flex-wrap">
         <div className="relative flex-1 min-w-[300px]">
