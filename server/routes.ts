@@ -15,23 +15,66 @@ const emailSchema = z.object({
   body: z.string(),
   receivedAt: z.string(),
   read: z.boolean().optional(),
+  threadId: z.string().optional(),
+  inReplyTo: z.string().optional(),
 });
+
+// Helper function to normalize subject for threading
+function normalizeSubject(subject: string): string {
+  let normalized = subject.trim();
+  // Iteratively strip all leading reply/forward prefixes
+  let prev = '';
+  while (prev !== normalized) {
+    prev = normalized;
+    normalized = normalized.replace(/^(Re|Fwd|RE|FWD|Fw):\s*/i, '').trim();
+  }
+  return normalized.toLowerCase();
+}
+
+// Helper function to generate thread ID from email
+function generateThreadId(email: any): string {
+  // Priority 1: Use provider-supplied threadId if available
+  if (email.threadId && typeof email.threadId === 'string') {
+    return email.threadId;
+  }
+  
+  // Priority 2: Use inReplyTo to link to parent message
+  if (email.inReplyTo && typeof email.inReplyTo === 'string') {
+    return email.inReplyTo;
+  }
+  
+  // Priority 3: Use message ID if available
+  if (email.messageId && typeof email.messageId === 'string') {
+    return email.messageId;
+  }
+  
+  // Fallback: Generate from normalized subject + sender email + message id for uniqueness
+  // Include email.id to prevent collisions between different customers with same subject
+  const normalized = normalizeSubject(email.subject || '');
+  const senderEmail = email.from?.email || 'unknown';
+  const emailId = email.id || '';
+  const composite = `${normalized}:${senderEmail}:${emailId}`;
+  return Buffer.from(composite).toString('base64').substring(0, 32);
+}
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Fetch emails from AgentMail
   app.get("/api/emails", async (req, res) => {
     try {
       const agentMail = await getUncachableAgentMailClient();
-      const response = await agentMail.emails.list();
+      const response: any = await (agentMail as any).emails.list();
       
       // Defensive parsing with type validation
       const rawEmails = Array.isArray(response?.emails) ? response.emails : [];
       
-      // Validate each email and filter out invalid ones
+      // Validate each email and add threadId
       const validatedEmails = rawEmails
-        .map((email: any) => {
+        .map((email: Record<string, any>) => {
           try {
-            return emailSchema.parse(email);
+            const parsed = emailSchema.parse(email);
+            // Generate threadId using metadata or fallback to subject
+            const threadId = generateThreadId(email);
+            return { ...parsed, threadId };
           } catch (validationError) {
             console.warn("Invalid email record:", validationError);
             return null;
@@ -39,12 +82,53 @@ export async function registerRoutes(app: Express): Promise<Server> {
         })
         .filter((email): email is z.infer<typeof emailSchema> => email !== null);
       
+      // Group emails into threads
+      const threadsMap = new Map<string, z.infer<typeof emailSchema>[]>();
+      validatedEmails.forEach(email => {
+        const threadId = email.threadId || email.id;
+        if (!threadsMap.has(threadId)) {
+          threadsMap.set(threadId, []);
+        }
+        threadsMap.get(threadId)!.push(email);
+      });
+      
+      // Create thread objects
+      const threads = Array.from(threadsMap.entries()).map(([threadId, emails]) => {
+        // Sort emails by date (newest first)
+        const sortedEmails = emails.sort((a, b) => 
+          new Date(b.receivedAt).getTime() - new Date(a.receivedAt).getTime()
+        );
+        
+        // Use original subject from most recent email (preserve casing)
+        const originalSubject = sortedEmails[0].subject;
+        // Strip reply prefixes but preserve original capitalization
+        let displaySubject = originalSubject.trim();
+        let prev = '';
+        while (prev !== displaySubject) {
+          prev = displaySubject;
+          displaySubject = displaySubject.replace(/^(Re|Fwd|RE|FWD|Fw):\s*/i, '').trim();
+        }
+        
+        return {
+          threadId,
+          subject: displaySubject,
+          emails: sortedEmails,
+          lastReceivedAt: sortedEmails[0].receivedAt,
+          unreadCount: sortedEmails.filter(e => !e.read).length,
+        };
+      });
+      
+      // Sort threads by most recent email
+      threads.sort((a, b) => 
+        new Date(b.lastReceivedAt).getTime() - new Date(a.lastReceivedAt).getTime()
+      );
+      
       const total = typeof response?.total === 'number' ? response.total : validatedEmails.length;
       
-      res.json({ emails: validatedEmails, total });
+      res.json({ emails: validatedEmails, threads, total });
     } catch (error) {
       console.error("Error fetching emails:", error);
-      res.status(500).json({ error: "Failed to fetch emails", emails: [], total: 0 });
+      res.status(500).json({ error: "Failed to fetch emails", emails: [], threads: [], total: 0 });
     }
   });
 
