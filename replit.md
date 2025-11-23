@@ -16,6 +16,30 @@ DriftSignal is a SaaS platform for centralized management of customer reviews an
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes
+
+### November 23, 2025 - Email Threading Implementation
+
+**Email Conversation Threading:**
+- Added intelligent email conversation grouping based on normalized subjects and metadata
+- Implemented priority-based thread ID generation: provider threadId → inReplyTo → messageId → fallback composite
+- Subject normalization strips all reply/forward prefixes while preserving original capitalization for display
+- Thread UI with collapsible expand/collapse using Shadcn Collapsible component
+- Visual indicators for reply count and unread messages in each thread
+- Graceful error handling for AgentMail integration (returns empty response instead of HTTP 500)
+
+**Technical Implementation:**
+- Updated `/api/emails` endpoint to fetch from AgentMail inboxes API
+- Added thread grouping logic in `server/routes.ts` with proper email validation using Zod
+- Enhanced `shared/types.ts` with EmailThread interface and updated EmailListResponse
+- Implemented collapsible thread UI in Dashboard with ChevronRight/ChevronDown icons
+- Added comprehensive error handling for missing AgentMail configuration
+
+**Testing:**
+- Verified graceful degradation when AgentMail is not configured
+- Tested expand/collapse functionality for threaded conversations
+- Validated proper handling of empty inbox state without error messages
+
 ## System Architecture
 
 ### Frontend Architecture
@@ -51,9 +75,12 @@ Preferred communication style: Simple, everyday language.
 
 **API Design:**
 - RESTful endpoints under `/api` prefix
-- Current endpoints: `/api/emails` for email retrieval
+- Current endpoints:
+  - `/api/emails`: Email retrieval with conversation threading
+  - `/api/send-email`: Send emails via Outlook integration
 - Custom logging middleware for request/response tracking
 - JSON request/response handling with raw body access for webhooks
+- Graceful error handling with fallback to empty responses for missing integrations
 
 **Development vs Production:**
 - `server/index-dev.ts`: Vite integration with live reload
@@ -83,11 +110,25 @@ Preferred communication style: Simple, everyday language.
   - Integration in `server/integrations/agentmail.ts`
   - Uses Replit Connectors for credential management
   - Endpoint: `https://api.agentmail.to`
+  - API structure: `client.inboxes.list()` for inboxes, `client.inboxes.messages.list(inboxId)` for messages
+  - Graceful degradation when not configured (returns empty response)
 
 - **Microsoft Graph API (Outlook)**: Email integration via `@microsoft/microsoft-graph-client`
   - Integration in `server/integrations/outlook.ts`
   - OAuth-based authentication through Replit Connectors
   - Token refresh handling with expiration checking
+
+**Email Threading System:**
+- Conversation grouping based on normalized email subjects
+- Thread ID generation priority:
+  1. Provider-supplied threadId (if available)
+  2. inReplyTo field for reply chains
+  3. messageId for unique identification
+  4. Fallback: composite of normalized subject + sender email + message ID
+- Subject normalization: iterative stripping of Re:/Fwd: prefixes
+- Display preserves original capitalization while grouping uses normalized form
+- Thread metadata: reply count, unread count, most recent message timestamp
+- UI: Collapsible threads with expand/collapse functionality using Shadcn Collapsible component
 
 **Replit Platform Integration:**
 - Replit Connectors system for secure credential storage
