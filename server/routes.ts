@@ -295,17 +295,24 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const processedReviews = [];
       for (const review of result.reviews) {
         try {
+          // Axesso returns: text, userName, title, rating, date
+          const reviewText = review.text || '';
+          const userName = review.userName || 'Anonymous';
+          const reviewTitle = review.title || 'Review';
+          const ratingString = review.rating || '0';
+          const reviewDate = review.date || new Date().toISOString();
+          
           // Analyze the review
           const analysis = await analyzeReview(
-            review.reviewText,
-            review.reviewerName,
+            reviewText,
+            userName,
             "Amazon"
           );
 
           // Generate AI reply
           const aiReply = await generateReply(
-            review.reviewText,
-            review.reviewerName,
+            reviewText,
+            userName,
             "Amazon",
             analysis.sentiment,
             analysis.severity
@@ -314,25 +321,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
           const processedReview = {
             id: `amazon-${asin}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             marketplace: "Amazon" as const,
-            title: review.reviewTitle,
-            content: review.reviewText,
-            customerName: review.reviewerName,
-            customerEmail: `${review.reviewerName.toLowerCase().replace(/\s+/g, '.')}@amazon.customer`,
-            rating: parseFloat(review.rating),
+            title: reviewTitle,
+            content: reviewText,
+            customerName: userName,
+            customerEmail: `${userName.toLowerCase().replace(/\s+/g, '.')}@amazon.customer`,
+            rating: parseFloat(ratingString.replace(/[^\d.]/g, '')),
             sentiment: analysis.sentiment,
             category: analysis.category,
             severity: analysis.severity,
             status: "open",
-            createdAt: new Date(review.reviewDate),
+            createdAt: new Date(reviewDate),
             aiSuggestedReply: aiReply,
-            verified: review.verified,
+            verified: true,
             asin: asin,
           };
 
           processedReviews.push(processedReview);
-          console.log(`✓ Processed review from ${review.reviewerName} (${analysis.sentiment}/${analysis.severity})`);
+          console.log(`✓ Processed review from ${userName} (${analysis.sentiment}/${analysis.severity})`);
         } catch (error) {
-          console.error(`Failed to process review from ${review.reviewerName}:`, error);
+          console.error(`Failed to process review:`, error);
         }
       }
 
