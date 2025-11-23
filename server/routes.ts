@@ -246,6 +246,69 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Check integration status
+  app.get("/api/integrations/status", async (req, res) => {
+    const status = {
+      agentmail: {
+        name: "AgentMail",
+        connected: false,
+        details: "",
+        lastChecked: new Date().toISOString(),
+      },
+      outlook: {
+        name: "Microsoft Outlook",
+        connected: false,
+        details: "",
+        lastChecked: new Date().toISOString(),
+      },
+      openrouter: {
+        name: "OpenRouter (Grok AI)",
+        connected: false,
+        details: "",
+        lastChecked: new Date().toISOString(),
+      },
+    };
+
+    // Check AgentMail
+    try {
+      const agentMail = await getUncachableAgentMailClient();
+      const inboxes = await (agentMail as any).inboxes.list();
+      status.agentmail.connected = true;
+      status.agentmail.details = `Connected with ${inboxes.data?.length || 0} inbox(es)`;
+    } catch (error: any) {
+      status.agentmail.connected = false;
+      status.agentmail.details = error.message || "Not configured";
+    }
+
+    // Check Outlook
+    try {
+      const outlookClient = await getUncachableOutlookClient();
+      const user = await outlookClient.api('/me').get();
+      status.outlook.connected = true;
+      status.outlook.details = `Connected as ${user.displayName || user.mail || user.userPrincipalName}`;
+    } catch (error: any) {
+      status.outlook.connected = false;
+      status.outlook.details = error.message || "Not configured";
+    }
+
+    // Check OpenRouter
+    try {
+      const apiKey = process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY;
+      if (!apiKey) {
+        throw new Error("API key not configured");
+      }
+      
+      // Simple validation - just check if key exists
+      status.openrouter.connected = true;
+      status.openrouter.details = "API key configured (Grok 4.1 Fast model)";
+    } catch (error: any) {
+      status.openrouter.connected = false;
+      status.openrouter.details = error.message || "API key not configured";
+    }
+
+    res.json(status);
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }
