@@ -1,6 +1,6 @@
 import { LayoutDashboard, Workflow, BarChart3, Upload, Filter, Settings } from "lucide-react";
-import { SiAmazon, SiEbay, SiShopify, SiPaypal, SiAlibabadotcom } from "react-icons/si";
-import { Globe } from "lucide-react";
+import { SiAmazon, SiShopify, SiWalmart } from "react-icons/si";
+import { Globe, ShoppingCart } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { useState, useMemo } from "react";
 import {
@@ -27,10 +27,8 @@ const mainMenuItems = [
 
 const marketplaces = [
   { title: "Amazon", icon: SiAmazon, color: "#FF9900" },
-  { title: "eBay", icon: SiEbay, color: "#E53238" },
   { title: "Shopify", icon: SiShopify, color: "#7AB55C" },
-  { title: "PayPal", icon: SiPaypal, color: "#00457C" },
-  { title: "Alibaba", icon: SiAlibabadotcom, color: "#FF6A00" },
+  { title: "Walmart", icon: SiWalmart, color: "#0071CE" },
   { title: "Website", icon: Globe, color: "#6B7280" },
 ];
 

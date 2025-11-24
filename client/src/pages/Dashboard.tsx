@@ -5,7 +5,7 @@ import { StatCard } from "@/components/StatCard";
 import { ReviewCard } from "@/components/ReviewCard";
 import { ReviewDetailModal } from "@/components/ReviewDetailModal";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
-import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Inbox, ChevronDown, ChevronRight, Package } from "lucide-react";
+import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Inbox, ChevronDown, ChevronRight, Package, ShoppingCart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -14,7 +14,7 @@ import type { EmailListResponse, Email, EmailThread } from "@shared/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { SiAmazon } from "react-icons/si";
+import { SiAmazon, SiShopify, SiWalmart } from "react-icons/si";
 
 // Mock reviews removed - now using only real imported reviews from Amazon/other sources
 const mockReviews: any[] = [];
@@ -96,6 +96,50 @@ export default function Dashboard() {
     }
   };
 
+  const handleExportData = () => {
+    if (filteredReviews.length === 0) {
+      toast({
+        title: "No Data to Export",
+        description: "There are no reviews matching your current filters.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const headers = ["Title", "Content", "Rating", "Sentiment", "Category", "Severity", "Status", "Marketplace", "Date"];
+    const csvData = filteredReviews.map(review => [
+      review.title,
+      review.content.replace(/"/g, '""'),
+      review.rating,
+      review.sentiment,
+      review.category,
+      review.severity,
+      review.status,
+      review.marketplace,
+      new Date(review.createdAt).toLocaleDateString()
+    ]);
+
+    const csvContent = [
+      headers.join(','),
+      ...csvData.map(row => row.map(cell => `"${cell}"`).join(','))
+    ].join('\n');
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `driftsignal-reviews-${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Export Successful",
+      description: `Exported ${filteredReviews.length} reviews to CSV file.`,
+    });
+  };
+
   const filteredReviews = useMemo(() => {
     return allReviews.filter((review) => {
       const matchesSearch = review.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -147,7 +191,11 @@ export default function Dashboard() {
             <Upload className="h-4 w-4 mr-2" />
             Import Reviews
           </Button>
-          <Button data-testid="button-export-data">
+          <Button 
+            variant="outline"
+            onClick={handleExportData}
+            data-testid="button-export-data"
+          >
             <Download className="h-4 w-4 mr-2" />
             Export Data
           </Button>
@@ -177,7 +225,9 @@ export default function Dashboard() {
                   <CardContent className="p-4">
                     <div className="flex items-start gap-3">
                       <div className="p-2 rounded-md bg-muted/50">
-                        {product.platform === "Amazon" && <SiAmazon className="h-5 w-5" />}
+                        {product.platform === "Amazon" && <SiAmazon className="h-5 w-5" style={{ color: "#FF9900" }} />}
+                        {product.platform === "Shopify" && <SiShopify className="h-5 w-5" style={{ color: "#7AB55C" }} />}
+                        {product.platform === "Walmart" && <SiWalmart className="h-5 w-5" style={{ color: "#0071CE" }} />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">

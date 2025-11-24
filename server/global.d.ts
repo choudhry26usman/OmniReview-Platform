@@ -1,7 +1,7 @@
 declare global {
   var importedReviews: Array<{
     id: string;
-    marketplace: "Amazon" | "eBay" | "Shopify" | "PayPal" | "Alibaba" | "Website" | "Walmart";
+    marketplace: "Amazon" | "Shopify" | "Walmart" | "Website";
     title: string;
     content: string;
     customerName: string;
@@ -19,7 +19,7 @@ declare global {
 
   var trackedProducts: Array<{
     id: string;
-    platform: "Amazon" | "eBay" | "Shopify" | "PayPal" | "Alibaba" | "Website" | "Walmart";
+    platform: "Amazon" | "Shopify" | "Walmart" | "Website";
     productId: string;
     productName: string;
     reviewCount: number;
