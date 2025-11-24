@@ -2,9 +2,23 @@
 
 ## Overview
 
-DriftSignal is a SaaS platform designed for centralized management of customer reviews and complaints across various marketplace platforms (Amazon, eBay, Shopify, PayPal, Alibaba, Walmart, and Website). It offers AI-powered analysis, sentiment tracking, and workflow management for customer feedback. The platform features a premium, enterprise-grade interface with a glass-morphic design inspired by Linear, Notion, and Asana. Its core capabilities include unified multi-marketplace review aggregation, AI-powered sentiment analysis and categorization using Grok 4.1 Fast LLM, Kanban-style workflow management, analytics for review trends, email integration for customer communication, and theme switching.
+DriftSignal is a SaaS platform designed for centralized management of customer reviews and complaints across various marketplace platforms (Amazon, Shopify, Walmart, and Website). It offers AI-powered analysis, sentiment tracking, and workflow management for customer feedback. The platform features a premium, enterprise-grade interface with a glass-morphic design inspired by Linear, Notion, and Asana. Its core capabilities include unified multi-marketplace review aggregation, AI-powered sentiment analysis and categorization using Grok 4.1 Fast LLM, Kanban-style workflow management, analytics for review trends, email integration for customer communication, CSV/JSON file import, and theme switching.
 
 ## Recent Changes (November 24, 2025)
+
+### File Import Feature & Marketplace Cleanup
+- **Implemented** CSV/JSON file import functionality with AI-powered processing
+  - Backend endpoint `/api/reviews/import-file` using multer for file uploads
+  - Supports CSV and JSON file formats (up to 10MB)
+  - Automatically parses reviews and processes through AI for sentiment/category/severity analysis
+  - Generates AI-suggested replies for each imported review
+  - Template download feature for proper CSV format
+- **Removed** non-functional marketplaces (eBay, Alibaba, PayPal) from the platform
+  - Updated sidebar to only show: Amazon, Shopify, Walmart, Website
+  - Updated import modal dropdown to match active marketplaces
+  - Updated global type definitions to reflect active platforms only
+- **Added** Export Data functionality - downloads filtered reviews as CSV
+- **Added** platform icons (Amazon, Shopify, Walmart) to product tracking section
 
 ### Walmart Reviews Integration
 - **Built** Walmart integration using Walmart API v2 via RapidAPI (walmart2.p.rapidapi.com)
