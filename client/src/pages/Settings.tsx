@@ -112,7 +112,7 @@ export default function Settings() {
       toast({
         variant: "destructive",
         title: "Import failed",
-        description: error.message || "Please check your Walmart product URL and AXESSO_API_KEY",
+        description: error.message || "Please check your Walmart product URL and RAPIDAPI_KEY",
       });
     },
   });
@@ -532,8 +532,8 @@ export default function Settings() {
                       <ShoppingCart className="h-5 w-5 text-primary" />
                     </div>
                     <div>
-                      <CardTitle className="text-base">Walmart (Axesso)</CardTitle>
-                      <CardDescription>E-commerce data extraction from Walmart</CardDescription>
+                      <CardTitle className="text-base">Walmart</CardTitle>
+                      <CardDescription>Access Walmart product data and reviews via RapidAPI</CardDescription>
                     </div>
                   </div>
                   <Badge 
@@ -574,14 +574,14 @@ export default function Settings() {
                     size="sm"
                     onClick={() => {
                       toast({
-                        title: "Same API Key",
-                        description: "Walmart uses the same AXESSO_API_KEY as Amazon. No additional setup needed!",
+                        title: "Configure Walmart",
+                        description: "Walmart uses RAPIDAPI_KEY from RapidAPI. Add it to your secrets.",
                       });
                     }}
                     data-testid="link-configure-walmart"
                   >
                     <ExternalLink className="h-3 w-3 mr-1" />
-                    API Key Info
+                    How to Configure
                   </Button>
                 </div>
               </CardContent>
@@ -766,7 +766,7 @@ export default function Settings() {
               <p>• Reviews will be analyzed for sentiment, category, and severity</p>
               <p>• AI-generated replies will be created for each review</p>
               <p>• Imported reviews will appear on your Dashboard</p>
-              <p>• Uses the same AXESSO_API_KEY as Amazon</p>
+              <p>• Uses RAPIDAPI_KEY from RapidAPI (walmart2.p.rapidapi.com)</p>
             </div>
           </CardContent>
         </Card>

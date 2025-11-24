@@ -2,11 +2,19 @@
 
 ## Overview
 
-DriftSignal is a SaaS platform designed for centralized management of customer reviews and complaints across various marketplace platforms (Amazon, eBay, Shopify, PayPal, Alibaba, and Website). It offers AI-powered analysis, sentiment tracking, and workflow management for customer feedback. The platform features a premium, enterprise-grade interface with a glass-morphic design inspired by Linear, Notion, and Asana. Its core capabilities include unified multi-marketplace review aggregation, AI-powered sentiment analysis and categorization using Grok 4.1 Fast LLM, Kanban-style workflow management, analytics for review trends, email integration for customer communication, and theme switching.
+DriftSignal is a SaaS platform designed for centralized management of customer reviews and complaints across various marketplace platforms (Amazon, eBay, Shopify, PayPal, Alibaba, Walmart, and Website). It offers AI-powered analysis, sentiment tracking, and workflow management for customer feedback. The platform features a premium, enterprise-grade interface with a glass-morphic design inspired by Linear, Notion, and Asana. Its core capabilities include unified multi-marketplace review aggregation, AI-powered sentiment analysis and categorization using Grok 4.1 Fast LLM, Kanban-style workflow management, analytics for review trends, email integration for customer communication, and theme switching.
 
-## Recent Changes (November 23, 2025)
+## Recent Changes (November 24, 2025)
 
-### Amazon Reviews Integration
+### Walmart Reviews Integration
+- **Built** Walmart integration using Walmart API v2 via RapidAPI (walmart2.p.rapidapi.com)
+- **Added** RAPIDAPI_KEY secret for Walmart API authentication
+- **Implemented** product URL parsing to extract product IDs
+- **Created** complete integration flow: URL input → RapidAPI search → AI analysis → Dashboard display
+- **UI Updates**: Added Walmart integration card to Settings page with status indicator and importer section
+- **Status**: Integration configured and ready for testing with Walmart product URLs
+
+### Amazon Reviews Integration (November 23, 2025)
 - **Moved** Amazon import interface from Dashboard to Settings page for better organization
 - **Built** complete AI-powered import pipeline: ASIN input → Axesso API fetch → AI analysis (sentiment/category/severity) → AI reply generation → in-memory storage → Dashboard display
 - **Fixed** Axesso API integration issues:
@@ -14,7 +22,6 @@ DriftSignal is a SaaS platform designed for centralized management of customer r
   - Updated endpoint path to `/amz/amazon-lookup-product` (confirmed working)
   - API now responds correctly with proper error messages
 - **Current Status**: Import system fully functional, but Axesso free tier has very limited product coverage. Many ASINs cannot be found in their database.
-- **Next Step**: User needs to find valid Amazon ASINs with actual reviews that are indexed by Axesso's system for testing.
 
 ## User Preferences
 
@@ -42,10 +49,15 @@ The application uses PostgreSQL, specifically Neon serverless, via the `@neondat
   - **Endpoint**: `/amz/amazon-lookup-product` (confirmed working)
   - **Known Limitation**: Free tier (BASIC plan - 50 requests/month) has limited product coverage. Many ASINs return "product not found" errors, likely due to Axesso's product indexing limitations or regional availability.
   - **Subscription Required**: User subscribed to RapidAPI free tier via api.rapidapi.com
+- **Walmart API v2 via RapidAPI**: Used for fetching Walmart product reviews and details.
+  - **Status**: Integration configured with RAPIDAPI_KEY
+  - **Base URL**: `walmart2.p.rapidapi.com`
+  - **Endpoint**: `/search` for product search by ID
+  - **Authentication**: Uses RAPIDAPI_KEY secret
 - **OpenRouter + Grok 4.1 Fast**: Provides AI capabilities for generating customer service replies and analyzing review sentiment, severity, and category.
 
 ### Replit Platform Integration
-- **Replit Connectors**: Used for secure management of API keys and credentials, including `AXESSO_API_KEY`, `AI_INTEGRATIONS_OPENROUTER_API_KEY`, and credentials for AgentMail and Outlook.
+- **Replit Connectors**: Used for secure management of API keys and credentials, including `AXESSO_API_KEY`, `RAPIDAPI_KEY`, `AI_INTEGRATIONS_OPENROUTER_API_KEY`, and credentials for AgentMail and Outlook.
 - **Environment Variables**: Leverages Replit's environment variables for configuration.
 
 ### Database Provider

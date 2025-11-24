@@ -1,10 +1,10 @@
 /**
- * Walmart integration using Axesso Walmart Data Service via RapidAPI
+ * Walmart integration using Walmart API v2 via RapidAPI
  * Fetches product details and reviews from Walmart
  */
 
-const AXESSO_API_KEY = process.env.AXESSO_API_KEY;
-const AXESSO_WALMART_HOST = "axesso-axesso-walmart-data-service.p.rapidapi.com";
+const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
+const WALMART_HOST = "walmart2.p.rapidapi.com";
 
 interface WalmartReview {
   reviewText?: string;
@@ -23,6 +23,15 @@ interface WalmartProductResponse {
   averageRating?: number;
   responseStatus?: string;
   responseMessage?: string;
+  // Search response fields
+  items?: Array<{
+    productName?: string;
+    productId?: string;
+    itemId?: string;
+    reviews?: WalmartReview[];
+    averageRating?: number;
+    numReviews?: number;
+  }>;
 }
 
 export interface WalmartReviewData {
@@ -42,10 +51,19 @@ export interface WalmartProductData {
 }
 
 /**
- * Check if Walmart/Axesso API is configured
+ * Check if Walmart/RapidAPI is configured
  */
 export function isWalmartConfigured(): boolean {
-  return !!AXESSO_API_KEY;
+  return !!RAPIDAPI_KEY;
+}
+
+/**
+ * Extract product ID from Walmart URL
+ */
+function extractProductId(url: string): string | null {
+  // Walmart URLs typically look like: https://www.walmart.com/ip/Product-Name/123456789
+  const match = url.match(/\/ip\/[^/]+\/(\d+)/);
+  return match ? match[1] : null;
 }
 
 /**
@@ -53,25 +71,31 @@ export function isWalmartConfigured(): boolean {
  * @param productUrl - Full Walmart product URL (e.g., https://www.walmart.com/ip/...")
  */
 export async function fetchWalmartProduct(productUrl: string): Promise<WalmartProductData> {
-  if (!AXESSO_API_KEY) {
-    throw new Error("AXESSO_API_KEY is not configured. Please add it to your environment variables.");
+  if (!RAPIDAPI_KEY) {
+    throw new Error("RAPIDAPI_KEY is not configured. Please add it to your environment variables.");
   }
 
   if (!productUrl.includes('walmart.com')) {
     throw new Error("Invalid Walmart URL. Please provide a valid walmart.com product URL.");
   }
 
+  // Extract product ID from URL
+  const productId = extractProductId(productUrl);
+  if (!productId) {
+    throw new Error("Could not extract product ID from URL. Please provide a valid Walmart product URL.");
+  }
+
   try {
-    const url = `https://${AXESSO_WALMART_HOST}/wlm/walmart-lookup-product`;
+    // Try to search for the product using the product ID
+    const searchUrl = `https://${WALMART_HOST}/search?query=${productId}`;
     
-    const response = await fetch(url, {
+    console.log('[Walmart] Fetching product with ID:', productId);
+    const response = await fetch(searchUrl, {
       method: 'GET',
       headers: {
-        'x-rapidapi-key': AXESSO_API_KEY,
-        'x-rapidapi-host': AXESSO_WALMART_HOST
-      },
-      // Add the product URL as a query parameter
-      // Note: Axesso expects the full URL
+        'x-rapidapi-key': RAPIDAPI_KEY,
+        'x-rapidapi-host': WALMART_HOST
+      }
     });
 
     if (!response.ok) {
@@ -79,7 +103,7 @@ export async function fetchWalmartProduct(productUrl: string): Promise<WalmartPr
       console.error('[Walmart] API error response:', errorText);
       
       if (response.status === 403) {
-        throw new Error("API authentication failed. Please verify your AXESSO_API_KEY is correct.");
+        throw new Error("API authentication failed. Please verify your RAPIDAPI_KEY is correct.");
       } else if (response.status === 404) {
         throw new Error("Product not found. Please check the Walmart product URL.");
       } else {
@@ -90,30 +114,46 @@ export async function fetchWalmartProduct(productUrl: string): Promise<WalmartPr
     const data: WalmartProductResponse = await response.json();
     console.log('[Walmart] API response:', JSON.stringify(data, null, 2));
 
-    if (data.responseStatus === 'PRODUCT_NOT_FOUND') {
-      throw new Error(`Product not found: ${data.responseMessage || 'The product may not be indexed in Axesso database'}`);
+    // Check if we got search results
+    if (data.items && data.items.length > 0) {
+      const product = data.items[0];
+      const reviews: WalmartReviewData[] = (product.reviews || []).map(review => ({
+        reviewerName: review.reviewerName || 'Anonymous',
+        rating: review.rating || 0,
+        title: review.title || '',
+        text: review.reviewText || '',
+        date: review.reviewDate || new Date().toISOString()
+      }));
+
+      return {
+        productName: product.productName || 'Unknown Product',
+        productId: product.productId || product.itemId || productId,
+        reviews,
+        totalReviews: product.numReviews || reviews.length,
+        averageRating: product.averageRating || 0
+      };
     }
 
-    // Extract product ID from URL
-    const productIdMatch = productUrl.match(/\/ip\/[^/]+\/(\d+)/);
-    const productId = productIdMatch ? productIdMatch[1] : productUrl;
+    // Fallback: check if direct product data is available
+    if (data.productTitle) {
+      const reviews: WalmartReviewData[] = (data.reviews || []).map(review => ({
+        reviewerName: review.reviewerName || 'Anonymous',
+        rating: review.rating || 0,
+        title: review.title || '',
+        text: review.reviewText || '',
+        date: review.reviewDate || new Date().toISOString()
+      }));
 
-    // Parse reviews
-    const reviews: WalmartReviewData[] = (data.reviews || []).map(review => ({
-      reviewerName: review.reviewerName || 'Anonymous',
-      rating: review.rating || 0,
-      title: review.title || '',
-      text: review.reviewText || '',
-      date: review.reviewDate || new Date().toISOString()
-    }));
+      return {
+        productName: data.productTitle,
+        productId,
+        reviews,
+        totalReviews: data.numberOfReviews || reviews.length,
+        averageRating: data.averageRating || 0
+      };
+    }
 
-    return {
-      productName: data.productTitle || 'Unknown Product',
-      productId,
-      reviews,
-      totalReviews: data.numberOfReviews || reviews.length,
-      averageRating: data.averageRating || 0
-    };
+    throw new Error('No product data found. The product may not be available or indexed.');
 
   } catch (error) {
     console.error('[Walmart] Error fetching product:', error);
@@ -128,28 +168,26 @@ export async function fetchWalmartProduct(productUrl: string): Promise<WalmartPr
  * Test Walmart API connection
  */
 export async function testWalmartConnection(): Promise<{ success: boolean; message: string }> {
-  if (!AXESSO_API_KEY) {
+  if (!RAPIDAPI_KEY) {
     return {
       success: false,
-      message: 'AXESSO_API_KEY not configured'
+      message: 'RAPIDAPI_KEY not configured'
     };
   }
 
   try {
-    // Test with a sample Walmart product URL
-    // This is just a connectivity test - we don't need actual data
-    const testUrl = 'https://www.walmart.com/ip/test';
-    const url = `https://${AXESSO_WALMART_HOST}/wlm/walmart-lookup-product`;
+    // Test with a simple search query
+    const testUrl = `https://${WALMART_HOST}/search?query=xbox`;
     
-    const response = await fetch(url, {
+    const response = await fetch(testUrl, {
       method: 'GET',
       headers: {
-        'x-rapidapi-key': AXESSO_API_KEY,
-        'x-rapidapi-host': AXESSO_WALMART_HOST
+        'x-rapidapi-key': RAPIDAPI_KEY,
+        'x-rapidapi-host': WALMART_HOST
       }
     });
 
-    // Even if the product doesn't exist, a proper API response means we're connected
+    // Even if the search returns no results, a proper API response means we're connected
     if (response.status === 403) {
       return {
         success: false,
@@ -157,9 +195,16 @@ export async function testWalmartConnection(): Promise<{ success: boolean; messa
       };
     }
 
+    if (response.ok) {
+      return {
+        success: true,
+        message: 'Successfully connected to Walmart API via RapidAPI'
+      };
+    }
+
     return {
-      success: true,
-      message: 'Successfully connected to Axesso Walmart Data Service'
+      success: false,
+      message: `API responded with status ${response.status}`
     };
 
   } catch (error) {
