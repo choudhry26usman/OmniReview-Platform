@@ -1,10 +1,9 @@
 /**
- * Walmart integration using Walmart API v2 via RapidAPI
+ * Walmart integration using SerpApi
  * Fetches product details and reviews from Walmart
  */
 
-const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
-const WALMART_HOST = "walmart2.p.rapidapi.com";
+const SERPAPI_KEY = process.env.SERPAPI_KEY;
 
 interface WalmartReview {
   reviewText?: string;
@@ -51,10 +50,10 @@ export interface WalmartProductData {
 }
 
 /**
- * Check if Walmart/RapidAPI is configured
+ * Check if Walmart/SerpApi is configured
  */
 export function isWalmartConfigured(): boolean {
-  return !!RAPIDAPI_KEY;
+  return !!SERPAPI_KEY;
 }
 
 /**
@@ -67,12 +66,12 @@ function extractProductId(url: string): string | null {
 }
 
 /**
- * Fetch Walmart product details and reviews by product URL
+ * Fetch Walmart product details and reviews by product URL using SerpApi
  * @param productUrl - Full Walmart product URL (e.g., https://www.walmart.com/ip/...")
  */
 export async function fetchWalmartProduct(productUrl: string): Promise<WalmartProductData> {
-  if (!RAPIDAPI_KEY) {
-    throw new Error("RAPIDAPI_KEY is not configured. Please add it to your environment variables.");
+  if (!SERPAPI_KEY) {
+    throw new Error("SERPAPI_KEY is not configured. Please add it to your environment variables.");
   }
 
   if (!productUrl.includes('walmart.com')) {
@@ -86,24 +85,18 @@ export async function fetchWalmartProduct(productUrl: string): Promise<WalmartPr
   }
 
   try {
-    // Use searchV2 endpoint (search is deprecated)
-    const searchUrl = `https://${WALMART_HOST}/searchV2?query=${productId}`;
+    // Use SerpApi Walmart Product API
+    const serpApiUrl = `https://serpapi.com/search.json?engine=walmart_product&product_id=${productId}&api_key=${SERPAPI_KEY}`;
     
     console.log('[Walmart] Fetching product with ID:', productId);
-    const response = await fetch(searchUrl, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-key': RAPIDAPI_KEY,
-        'x-rapidapi-host': WALMART_HOST
-      }
-    });
+    const response = await fetch(serpApiUrl);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('[Walmart] API error response:', errorText);
+      console.error('[Walmart] SerpApi error response:', errorText);
       
-      if (response.status === 403) {
-        throw new Error("API authentication failed. Please verify your RAPIDAPI_KEY is correct.");
+      if (response.status === 401) {
+        throw new Error("API authentication failed. Please verify your SERPAPI_KEY is correct.");
       } else if (response.status === 404) {
         throw new Error("Product not found. Please check the Walmart product URL.");
       } else {
@@ -111,49 +104,52 @@ export async function fetchWalmartProduct(productUrl: string): Promise<WalmartPr
       }
     }
 
-    const data: WalmartProductResponse = await response.json();
-    console.log('[Walmart] API response:', JSON.stringify(data, null, 2));
+    const data: any = await response.json();
+    console.log('[Walmart] SerpApi response received');
 
-    // Check if we got search results
-    if (data.items && data.items.length > 0) {
-      const product = data.items[0];
-      const reviews: WalmartReviewData[] = (product.reviews || []).map(review => ({
-        reviewerName: review.reviewerName || 'Anonymous',
-        rating: review.rating || 0,
-        title: review.title || '',
-        text: review.reviewText || '',
-        date: review.reviewDate || new Date().toISOString()
-      }));
+    // Extract product information
+    const productName = data.product_result?.title || 'Unknown Product';
+    const averageRating = data.product_result?.rating || 0;
+    
+    // Get reviews from SerpApi
+    const reviewsData = data.reviews || [];
+    const reviews: WalmartReviewData[] = reviewsData.map((review: any) => ({
+      reviewerName: review.author || 'Anonymous',
+      rating: review.rating || 0,
+      title: review.title || '',
+      text: review.review || review.text || '',
+      date: review.date || new Date().toISOString()
+    }));
 
-      return {
-        productName: product.productName || 'Unknown Product',
-        productId: product.productId || product.itemId || productId,
-        reviews,
-        totalReviews: product.numReviews || reviews.length,
-        averageRating: product.averageRating || 0
-      };
+    // If no reviews in main response, try reviews endpoint
+    if (reviews.length === 0) {
+      console.log('[Walmart] No reviews in product data, fetching reviews separately...');
+      const reviewsUrl = `https://serpapi.com/search.json?engine=walmart_product_reviews&product_id=${productId}&api_key=${SERPAPI_KEY}`;
+      
+      const reviewsResponse = await fetch(reviewsUrl);
+      if (reviewsResponse.ok) {
+        const reviewsDataResponse: any = await reviewsResponse.json();
+        const fetchedReviews = reviewsDataResponse.reviews || [];
+        
+        fetchedReviews.forEach((review: any) => {
+          reviews.push({
+            reviewerName: review.author || 'Anonymous',
+            rating: review.rating || 0,
+            title: review.title || '',
+            text: review.review || review.text || '',
+            date: review.date || new Date().toISOString()
+          });
+        });
+      }
     }
 
-    // Fallback: check if direct product data is available
-    if (data.productTitle) {
-      const reviews: WalmartReviewData[] = (data.reviews || []).map(review => ({
-        reviewerName: review.reviewerName || 'Anonymous',
-        rating: review.rating || 0,
-        title: review.title || '',
-        text: review.reviewText || '',
-        date: review.reviewDate || new Date().toISOString()
-      }));
-
-      return {
-        productName: data.productTitle,
-        productId,
-        reviews,
-        totalReviews: data.numberOfReviews || reviews.length,
-        averageRating: data.averageRating || 0
-      };
-    }
-
-    throw new Error('No product data found. The product may not be available or indexed.');
+    return {
+      productName,
+      productId,
+      reviews,
+      totalReviews: data.product_result?.reviews_count || reviews.length,
+      averageRating
+    };
 
   } catch (error) {
     console.error('[Walmart] Error fetching product:', error);
@@ -165,30 +161,23 @@ export async function fetchWalmartProduct(productUrl: string): Promise<WalmartPr
 }
 
 /**
- * Test Walmart API connection
+ * Test Walmart API connection using SerpApi
  */
 export async function testWalmartConnection(): Promise<{ success: boolean; message: string }> {
-  if (!RAPIDAPI_KEY) {
+  if (!SERPAPI_KEY) {
     return {
       success: false,
-      message: 'RAPIDAPI_KEY not configured'
+      message: 'SERPAPI_KEY not configured'
     };
   }
 
   try {
-    // Test with a simple search query (using searchV2)
-    const testUrl = `https://${WALMART_HOST}/searchV2?query=xbox`;
+    // Test with a known product ID
+    const testUrl = `https://serpapi.com/search.json?engine=walmart_product&product_id=912882889&api_key=${SERPAPI_KEY}`;
     
-    const response = await fetch(testUrl, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-key': RAPIDAPI_KEY,
-        'x-rapidapi-host': WALMART_HOST
-      }
-    });
+    const response = await fetch(testUrl);
 
-    // Even if the search returns no results, a proper API response means we're connected
-    if (response.status === 403) {
+    if (response.status === 401) {
       return {
         success: false,
         message: 'API key authentication failed'
@@ -196,9 +185,16 @@ export async function testWalmartConnection(): Promise<{ success: boolean; messa
     }
 
     if (response.ok) {
+      const data = await response.json();
+      if (data.error) {
+        return {
+          success: false,
+          message: `SerpApi error: ${data.error}`
+        };
+      }
       return {
         success: true,
-        message: 'Successfully connected to Walmart API via RapidAPI'
+        message: 'Successfully connected to Walmart via SerpApi'
       };
     }
 
