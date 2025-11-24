@@ -93,12 +93,18 @@ export default function Dashboard() {
 
   const refreshProductMutation = useMutation({
     mutationFn: async ({ productId, platform }: { productId: string; platform: string }) => {
-      const response = await apiRequest("/api/products/refresh", {
+      const response = await fetch("/api/products/refresh", {
         method: "POST",
         body: JSON.stringify({ productId, platform }),
         headers: { "Content-Type": "application/json" },
       });
-      return response;
+      
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to refresh reviews");
+      }
+      
+      return response.json();
     },
     onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/products/tracked"] });

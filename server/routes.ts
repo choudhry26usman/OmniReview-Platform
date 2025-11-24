@@ -473,7 +473,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       for (const review of result.reviews) {
         try {
           // Check for duplicates using review ID if available
-          const externalReviewId = review.reviewId || review.id || null;
+          const externalReviewId = (review as any).reviewId || (review as any).id || null;
           if (externalReviewId) {
             const exists = await storage.checkReviewExists(externalReviewId, "Amazon");
             if (exists) {
@@ -617,7 +617,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             productId: product.productId,
             productName: product.productName,
             reviewCount,
-            lastImported: product.lastImported.toISOString(),
+            lastImported: product.lastImported?.toISOString() || new Date().toISOString(),
           };
         })
       );
@@ -659,7 +659,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Process each review with duplicate detection
         for (const review of result.reviews) {
           try {
-            const externalReviewId = review.reviewId || review.id || null;
+            const externalReviewId = (review as any).reviewId || (review as any).id || null;
             if (externalReviewId) {
               const exists = await storage.checkReviewExists(externalReviewId, "Amazon");
               if (exists) {
@@ -719,7 +719,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Process each review with duplicate detection
         for (const review of result.reviews) {
           try {
-            const externalReviewId = review.reviewId || review.id || null;
+            const externalReviewId = (review as any).reviewId || (review as any).id || null;
             if (externalReviewId) {
               const exists = await storage.checkReviewExists(externalReviewId, "Walmart");
               if (exists) {
