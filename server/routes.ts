@@ -622,6 +622,122 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Get analytics data
+  app.get("/api/analytics", async (req, res) => {
+    try {
+      const { startDate, endDate } = req.query;
+      
+      // Get all reviews
+      const allReviews = await storage.getReviews();
+      
+      // Filter by date range if provided
+      let filteredReviews = allReviews;
+      if (startDate && endDate) {
+        const start = new Date(startDate as string);
+        const end = new Date(endDate as string);
+        filteredReviews = allReviews.filter(r => {
+          const reviewDate = new Date(r.createdAt);
+          return reviewDate >= start && reviewDate <= end;
+        });
+      }
+
+      // Calculate sentiment distribution
+      const sentimentCounts = filteredReviews.reduce((acc, r) => {
+        acc[r.sentiment] = (acc[r.sentiment] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Calculate category distribution
+      const categoryCounts = filteredReviews.reduce((acc, r) => {
+        acc[r.category] = (acc[r.category] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Calculate marketplace distribution
+      const marketplaceCounts = filteredReviews.reduce((acc, r) => {
+        acc[r.marketplace] = (acc[r.marketplace] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Calculate severity distribution
+      const severityCounts = filteredReviews.reduce((acc, r) => {
+        acc[r.severity] = (acc[r.severity] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Calculate rating distribution
+      const ratingCounts = filteredReviews.reduce((acc, r) => {
+        if (r.rating) {
+          const rating = Math.floor(r.rating);
+          acc[rating] = (acc[rating] || 0) + 1;
+        }
+        return acc;
+      }, {} as Record<number, number>);
+
+      // Calculate status distribution
+      const statusCounts = filteredReviews.reduce((acc, r) => {
+        acc[r.status] = (acc[r.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+
+      // Calculate weekly sentiment trends (last 12 weeks)
+      const weeklyTrends: Record<string, { positive: number; neutral: number; negative: number }> = {};
+      const now = new Date();
+      
+      for (let i = 11; i >= 0; i--) {
+        const weekStart = new Date(now);
+        weekStart.setDate(weekStart.getDate() - (i * 7));
+        weekStart.setHours(0, 0, 0, 0);
+        
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekEnd.getDate() + 6);
+        weekEnd.setHours(23, 59, 59, 999);
+        
+        const weekKey = `Week ${12 - i}`;
+        weeklyTrends[weekKey] = { positive: 0, neutral: 0, negative: 0 };
+        
+        filteredReviews.forEach(r => {
+          const reviewDate = new Date(r.createdAt);
+          if (reviewDate >= weekStart && reviewDate <= weekEnd) {
+            weeklyTrends[weekKey][r.sentiment as 'positive' | 'neutral' | 'negative']++;
+          }
+        });
+      }
+
+      // Calculate stats
+      const totalReviews = filteredReviews.length;
+      const positiveRate = totalReviews > 0 ? (sentimentCounts.positive || 0) / totalReviews : 0;
+      const negativeRate = totalReviews > 0 ? (sentimentCounts.negative || 0) / totalReviews : 0;
+      const resolutionRate = totalReviews > 0 ? (statusCounts.resolved || 0) / totalReviews : 0;
+      
+      // Calculate average rating
+      const reviewsWithRating = filteredReviews.filter(r => r.rating);
+      const avgRating = reviewsWithRating.length > 0
+        ? reviewsWithRating.reduce((sum, r) => sum + (r.rating || 0), 0) / reviewsWithRating.length
+        : 0;
+
+      res.json({
+        stats: {
+          totalReviews,
+          positiveRate: (positiveRate * 100).toFixed(1),
+          negativeRate: (negativeRate * 100).toFixed(1),
+          resolutionRate: (resolutionRate * 100).toFixed(1),
+          avgRating: avgRating.toFixed(1),
+        },
+        sentimentCounts,
+        categoryCounts,
+        marketplaceCounts,
+        severityCounts,
+        ratingCounts,
+        statusCounts,
+        weeklyTrends,
+      });
+    } catch (error: any) {
+      console.error("Failed to fetch analytics:", error);
+      res.status(500).json({ error: "Failed to fetch analytics" });
+    }
+  });
+
   // Get all tracked products
   app.get("/api/products/tracked", async (req, res) => {
     try {
