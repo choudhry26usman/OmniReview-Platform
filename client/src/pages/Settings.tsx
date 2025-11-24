@@ -23,7 +23,6 @@ interface IntegrationStatus {
 }
 
 interface ConnectionStatusResponse {
-  agentmail: IntegrationStatus;
   outlook: IntegrationStatus;
   openrouter: IntegrationStatus;
   axesso: IntegrationStatus;
@@ -142,71 +141,6 @@ export default function Settings() {
           </Card>
         ) : (
           <div className="grid gap-4">
-            {/* AgentMail Integration */}
-            <Card data-testid="card-integration-agentmail">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-primary/10 rounded-md">
-                      <Mail className="h-5 w-5 text-primary" />
-                    </div>
-                    <div>
-                      <CardTitle className="text-base">AgentMail</CardTitle>
-                      <CardDescription>Email receiving and inbox management</CardDescription>
-                    </div>
-                  </div>
-                  <Badge 
-                    variant={statusData?.agentmail.connected ? "default" : "destructive"}
-                    data-testid="badge-agentmail-status"
-                  >
-                    {statusData?.agentmail.connected ? (
-                      <>
-                        <CheckCircle className="h-3 w-3 mr-1" />
-                        Connected
-                      </>
-                    ) : (
-                      <>
-                        <XCircle className="h-3 w-3 mr-1" />
-                        Disconnected
-                      </>
-                    )}
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {statusData?.agentmail.details && (
-                  <p className="text-sm text-muted-foreground">
-                    {statusData.agentmail.details}
-                  </p>
-                )}
-                <div className="flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => handleTestConnection('agentmail')}
-                    data-testid="button-test-agentmail"
-                  >
-                    Test Connection
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    asChild
-                  >
-                    <a 
-                      href="https://replit.com/~/settings/integrations" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      data-testid="link-configure-agentmail"
-                    >
-                      <ExternalLink className="h-3 w-3 mr-1" />
-                      Configure in Replit
-                    </a>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
             {/* Outlook Integration */}
             <Card data-testid="card-integration-outlook">
               <CardHeader>

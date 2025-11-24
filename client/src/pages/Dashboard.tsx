@@ -6,15 +6,13 @@ import { ReviewCard } from "@/components/ReviewCard";
 import { ReviewDetailModal } from "@/components/ReviewDetailModal";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
 import { ImportProductModal } from "@/components/ImportProductModal";
-import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Inbox, ChevronDown, ChevronRight, Package, ShoppingCart } from "lucide-react";
+import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Package, ShoppingCart } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
-import type { EmailListResponse, Email, EmailThread } from "@shared/types";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { SiAmazon, SiShopify, SiWalmart } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
 
@@ -68,10 +66,6 @@ export default function Dashboard() {
     });
   };
 
-  const { data: emailData, refetch: refetchEmails, isFetching: isFetchingEmails, error: emailError } = useQuery<EmailListResponse>({
-    queryKey: ["/api/emails"],
-    enabled: false,
-  });
 
   const { data: importedReviewsData } = useQuery<{ reviews: typeof mockReviews; total: number }>({
     queryKey: ["/api/reviews/imported"],
@@ -164,24 +158,37 @@ export default function Dashboard() {
     };
   }, [allReviews]);
 
-  const handleSyncEmails = async () => {
-    try {
-      const result = await refetchEmails();
-      if (result.isError || !result.data) {
-        throw new Error("Failed to fetch emails");
+  const syncEmailsMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch("/api/emails/sync", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to sync emails");
       }
-      const emailCount = result.data.total || 0;
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/reviews/imported"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/products/tracked"] });
       toast({
         title: "Emails Synced",
-        description: `Successfully synced ${emailCount} emails from AgentMail inbox.`,
+        description: `Imported ${data.imported} review(s) from Outlook. Skipped ${data.skipped} email(s).`,
       });
-    } catch (error) {
+    },
+    onError: (error: Error) => {
       toast({
         title: "Sync Failed",
-        description: "Could not sync emails. Please try again.",
+        description: error.message || "Could not sync emails from Outlook.",
         variant: "destructive",
       });
-    }
+    },
+  });
+
+  const handleSyncEmails = () => {
+    syncEmailsMutation.mutate();
   };
 
   const handleExportData = () => {
@@ -267,10 +274,10 @@ export default function Dashboard() {
           <Button 
             variant="default" 
             onClick={handleSyncEmails}
-            disabled={isFetchingEmails}
+            disabled={syncEmailsMutation.isPending}
             data-testid="button-sync-emails"
           >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isFetchingEmails ? 'animate-spin' : ''}`} />
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncEmailsMutation.isPending ? 'animate-spin' : ''}`} />
             Sync Emails
           </Button>
           <Button 
@@ -399,120 +406,6 @@ export default function Dashboard() {
         />
       </div>
 
-      {emailData && emailData.threads && emailData.threads.length > 0 && (
-        <Card data-testid="card-email-inbox">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
-                <Inbox className="h-5 w-5" />
-                Email Inbox
-              </CardTitle>
-              <CardDescription>
-                Product review emails grouped by conversation
-              </CardDescription>
-            </div>
-            <Badge variant="secondary" data-testid="badge-email-count">
-              {emailData.total} emails ({emailData.threads.length} conversations)
-            </Badge>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {emailData.threads.slice(0, 5).map((thread: EmailThread) => (
-                <Collapsible 
-                  key={thread.threadId}
-                  open={expandedThreads.has(thread.threadId)}
-                  onOpenChange={() => toggleThread(thread.threadId)}
-                >
-                  <div className="border rounded-lg">
-                    <CollapsibleTrigger asChild>
-                      <div 
-                        className="flex items-start gap-3 p-3 hover-elevate active-elevate-2 cursor-pointer"
-                        data-testid={`email-thread-${thread.threadId}`}
-                      >
-                        {expandedThreads.has(thread.threadId) ? (
-                          <ChevronDown className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                        ) : (
-                          <ChevronRight className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                        )}
-                        <Mail className="h-4 w-4 mt-1 text-muted-foreground flex-shrink-0" />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 mb-1 flex-wrap">
-                            <p className="text-sm font-medium truncate">
-                              {thread.emails[0].from.name || thread.emails[0].from.email}
-                            </p>
-                            {thread.emails.length > 1 && (
-                              <Badge variant="outline" className="text-xs">
-                                {thread.emails.length} messages
-                              </Badge>
-                            )}
-                            {thread.unreadCount > 0 && (
-                              <Badge variant="default" className="text-xs">
-                                {thread.unreadCount} new
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-sm font-medium truncate mb-1">{thread.emails[0].subject}</p>
-                          <p className="text-xs text-muted-foreground line-clamp-2">{thread.emails[0].body}</p>
-                          <p className="text-xs text-muted-foreground mt-1">
-                            {new Date(thread.lastReceivedAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                      </div>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent>
-                      <div className="border-t space-y-2 p-3 bg-muted/30">
-                        {thread.emails.slice(1).map((email: Email) => (
-                          <div 
-                            key={email.id}
-                            className="p-3 rounded-md bg-background border"
-                            data-testid={`email-item-${email.id}`}
-                          >
-                            <div className="flex items-center gap-2 mb-1">
-                              <p className="text-sm font-medium">{email.from.name || email.from.email}</p>
-                              {!email.read && <Badge variant="default" className="text-xs">New</Badge>}
-                            </div>
-                            <p className="text-xs text-muted-foreground line-clamp-3 mb-1">{email.body}</p>
-                            <p className="text-xs text-muted-foreground">
-                              {new Date(email.receivedAt).toLocaleDateString()}
-                            </p>
-                          </div>
-                        ))}
-                      </div>
-                    </CollapsibleContent>
-                  </div>
-                </Collapsible>
-              ))}
-            </div>
-            {emailData.threads.length > 5 && (
-              <p className="text-sm text-muted-foreground text-center mt-4">
-                Showing 5 of {emailData.threads.length} conversations
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {isFetchingEmails && !emailData && (
-        <Card>
-          <CardContent className="py-12">
-            <div className="flex flex-col items-center justify-center gap-3">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">Loading emails...</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {emailError && (
-        <Card className="border-destructive">
-          <CardContent className="py-6">
-            <div className="flex items-center gap-3 text-destructive">
-              <Mail className="h-5 w-5" />
-              <p className="text-sm">Failed to load emails. Please try syncing again.</p>
-            </div>
-          </CardContent>
-        </Card>
-      )}
 
       <div className="space-y-4">
         <div className="flex gap-4 flex-wrap">

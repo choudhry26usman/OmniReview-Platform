@@ -1,6 +1,5 @@
 import type { Express } from "express";
 import { createServer, type Server } from "http";
-import { getUncachableAgentMailClient } from "./integrations/agentmail";
 import { getUncachableOutlookClient } from "./integrations/outlook";
 import { testAxessoConnection } from "./integrations/axesso";
 import { testWalmartConnection } from "./integrations/walmart";
@@ -243,7 +242,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             severity: analysis.severity,
             status: 'open',
             aiSuggestedReply: aiReply,
-            verifiedPurchase: false,
+            verified: 0,
           });
           
           importedReviews.push(newReview);
@@ -1404,12 +1403,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Check integration status
   app.get("/api/integrations/status", async (req, res) => {
     const status = {
-      agentmail: {
-        name: "AgentMail",
-        connected: false,
-        details: "",
-        lastChecked: new Date().toISOString(),
-      },
       outlook: {
         name: "Microsoft Outlook",
         connected: false,
@@ -1441,18 +1434,6 @@ export async function registerRoutes(app: Express): Promise<Server> {
         lastChecked: new Date().toISOString(),
       },
     };
-
-    // Check AgentMail
-    try {
-      const agentMail = await getUncachableAgentMailClient();
-      const inboxesResponse = await (agentMail as any).inboxes.list();
-      const inboxCount = Array.isArray(inboxesResponse?.inboxes) ? inboxesResponse.inboxes.length : 0;
-      status.agentmail.connected = true;
-      status.agentmail.details = `Connected with ${inboxCount} inbox(es)`;
-    } catch (error: any) {
-      status.agentmail.connected = false;
-      status.agentmail.details = error.message || "Not configured";
-    }
 
     // Check Outlook
     try {
