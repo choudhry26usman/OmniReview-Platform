@@ -267,6 +267,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             createdAt: new Date(msg.receivedDateTime),
             status: 'open',
             aiSuggestedReply: aiReply,
+            aiAnalysisDetails: JSON.stringify(analysis),
             verified: 0,
           });
           
@@ -521,6 +522,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: processedReview.status,
             createdAt: processedReview.createdAt,
             aiSuggestedReply: processedReview.aiSuggestedReply,
+            aiAnalysisDetails: undefined,
             verified: processedReview.verified ? 1 : 0,
           });
           
@@ -645,6 +647,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: "open",
             createdAt: new Date(reviewDate),
             aiSuggestedReply: aiReply,
+            aiAnalysisDetails: JSON.stringify(analysis),
             verified: 1,
           });
 
@@ -1039,6 +1042,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: "open",
               createdAt: new Date(reviewDate),
               aiSuggestedReply: aiReply,
+              aiAnalysisDetails: JSON.stringify(analysis),
               verified: 1,
             });
 
@@ -1097,6 +1101,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
               status: "open",
               createdAt: new Date(review.date),
               aiSuggestedReply: aiReply,
+              aiAnalysisDetails: JSON.stringify(analysis),
               verified: 1,
             });
 
@@ -1364,6 +1369,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             status: processedReview.status,
             createdAt: processedReview.createdAt,
             aiSuggestedReply: processedReview.aiSuggestedReply,
+            aiAnalysisDetails: undefined,
             verified: processedReview.verified ? 1 : 0,
           });
           

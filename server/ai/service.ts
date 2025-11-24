@@ -51,6 +51,12 @@ export interface ReviewAnalysis {
   severity: "low" | "medium" | "high" | "critical";
   category: string;
   reasoning: string;
+  specificIssues: string[];
+  positiveAspects: string[];
+  keyPhrases: string[];
+  customerEmotion: string;
+  urgencyLevel: string;
+  recommendedActions: string[];
 }
 
 export async function analyzeReview(
@@ -59,19 +65,31 @@ export async function analyzeReview(
   marketplace: string
 ): Promise<ReviewAnalysis> {
   const systemPrompt = `You are an AI assistant analyzing customer reviews and complaints for an e-commerce business. 
-Analyze the sentiment, severity, and category of each review.
+Provide a comprehensive, detailed analysis of each review.
 
 Sentiment options: positive, negative, neutral
 Severity options: low (minor issue or praise), medium (moderate concern), high (serious problem), critical (urgent issue requiring immediate attention)
-Category: A brief 1-2 word category like "shipping", "quality", "service", "pricing", etc.
+Category: A brief 1-2 word category like "sound quality", "shipping delay", "product defect", "customer service", "pricing", etc.
 
-Respond in JSON format with: sentiment, severity, category, and a brief reasoning.`;
+Provide detailed analysis with:
+- sentiment: overall sentiment (positive/negative/neutral)
+- severity: severity level (low/medium/high/critical)
+- category: primary issue category (be specific, e.g., "sound quality" not just "quality")
+- reasoning: brief explanation of the analysis
+- specificIssues: array of specific problems mentioned (e.g., ["Audio cuts out during bass-heavy scenes", "External speakers required for acceptable sound"])
+- positiveAspects: array of positive things mentioned, if any (e.g., ["Good picture quality", "Bright colors"])
+- keyPhrases: 3-5 important quotes from the review (actual customer words)
+- customerEmotion: emotional tone (e.g., "frustrated", "disappointed", "angry", "satisfied", "delighted")
+- urgencyLevel: how quickly this needs attention (e.g., "Immediate - customer very dissatisfied", "Moderate - issue noted but not urgent")
+- recommendedActions: 3-4 specific, actionable steps tailored to THIS review (not generic advice)
+
+Respond ONLY with valid JSON format.`;
 
   const userPrompt = `Analyze this review from ${customerName} on ${marketplace}:
 
 "${reviewContent}"
 
-Provide your analysis in JSON format.`;
+Provide your detailed analysis in JSON format with all fields: sentiment, severity, category, reasoning, specificIssues, positiveAspects, keyPhrases, customerEmotion, urgencyLevel, recommendedActions.`;
 
   const response = await callOpenRouter({
     model: "x-ai/grok-4.1-fast",
@@ -96,6 +114,12 @@ Provide your analysis in JSON format.`;
       severity: parsed.severity || "medium",
       category: parsed.category || "general",
       reasoning: parsed.reasoning || "",
+      specificIssues: parsed.specificIssues || [],
+      positiveAspects: parsed.positiveAspects || [],
+      keyPhrases: parsed.keyPhrases || [],
+      customerEmotion: parsed.customerEmotion || "neutral",
+      urgencyLevel: parsed.urgencyLevel || "moderate",
+      recommendedActions: parsed.recommendedActions || [],
     };
   } catch (error) {
     console.error("Failed to parse AI response:", error);
@@ -104,6 +128,12 @@ Provide your analysis in JSON format.`;
       severity: "medium",
       category: "general",
       reasoning: "Failed to analyze review",
+      specificIssues: [],
+      positiveAspects: [],
+      keyPhrases: [],
+      customerEmotion: "neutral",
+      urgencyLevel: "moderate",
+      recommendedActions: [],
     };
   }
 }

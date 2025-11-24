@@ -48,6 +48,7 @@ interface ReviewDetailModalProps {
     status: string;
     createdAt: Date;
     aiSuggestedReply?: string;
+    aiAnalysisDetails?: string;
   };
 }
 
@@ -194,23 +195,120 @@ export function ReviewDetailModal({ open, onOpenChange, review }: ReviewDetailMo
                   AI-Powered Analysis
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Identified Issues</h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    <li>Primary concern: {review.category}</li>
-                    <li>Sentiment detected: {review.sentiment}</li>
-                    <li>Severity level: {review.severity}</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="text-sm font-medium mb-2">Recommended Actions</h4>
-                  <ul className="list-disc list-inside space-y-1 text-sm text-muted-foreground">
-                    <li>Respond within 24 hours to maintain customer satisfaction</li>
-                    <li>Acknowledge the specific issue mentioned in the review</li>
-                    <li>Offer a resolution or compensation if applicable</li>
-                  </ul>
-                </div>
+              <CardContent className="space-y-6">
+                {(() => {
+                  let analysisDetails = null;
+                  try {
+                    analysisDetails = review.aiAnalysisDetails ? JSON.parse(review.aiAnalysisDetails) : null;
+                  } catch (e) {
+                    console.error("Failed to parse AI analysis details:", e);
+                  }
+
+                  return (
+                    <>
+                      <div>
+                        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                          <span className="h-5 w-5 flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs">1</span>
+                          Overview
+                        </h4>
+                        <div className="space-y-2 pl-7">
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-muted-foreground">Primary concern:</span>
+                            <span className="font-medium">{review.category}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-muted-foreground">Sentiment:</span>
+                            <span className="font-medium capitalize">{review.sentiment}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <span className="text-muted-foreground">Severity:</span>
+                            <span className="font-medium capitalize">{review.severity}</span>
+                          </div>
+                          {analysisDetails?.customerEmotion && (
+                            <div className="flex items-center gap-2 text-sm">
+                              <span className="text-muted-foreground">Customer emotion:</span>
+                              <span className="font-medium capitalize">{analysisDetails.customerEmotion}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {analysisDetails?.specificIssues && analysisDetails.specificIssues.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <span className="h-5 w-5 flex items-center justify-center rounded-full bg-destructive/10 text-destructive text-xs">2</span>
+                            Specific Issues
+                          </h4>
+                          <ul className="list-disc list-inside space-y-1.5 text-sm text-muted-foreground pl-7">
+                            {analysisDetails.specificIssues.map((issue: string, i: number) => (
+                              <li key={i}>{issue}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {analysisDetails?.positiveAspects && analysisDetails.positiveAspects.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <span className="h-5 w-5 flex items-center justify-center rounded-full bg-green-500/10 text-green-600 dark:text-green-400 text-xs">+</span>
+                            Positive Aspects
+                          </h4>
+                          <ul className="list-disc list-inside space-y-1.5 text-sm text-muted-foreground pl-7">
+                            {analysisDetails.positiveAspects.map((aspect: string, i: number) => (
+                              <li key={i}>{aspect}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {analysisDetails?.keyPhrases && analysisDetails.keyPhrases.length > 0 && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <span className="h-5 w-5 flex items-center justify-center rounded-full bg-primary/10 text-primary text-xs">"</span>
+                            Key Customer Phrases
+                          </h4>
+                          <div className="space-y-2 pl-7">
+                            {analysisDetails.keyPhrases.map((phrase: string, i: number) => (
+                              <p key={i} className="text-sm text-muted-foreground italic border-l-2 border-primary/30 pl-3">
+                                "{phrase}"
+                              </p>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {analysisDetails?.urgencyLevel && (
+                        <div>
+                          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                            <span className="h-5 w-5 flex items-center justify-center rounded-full bg-orange-500/10 text-orange-600 dark:text-orange-400 text-xs">!</span>
+                            Urgency Assessment
+                          </h4>
+                          <p className="text-sm text-muted-foreground pl-7">{analysisDetails.urgencyLevel}</p>
+                        </div>
+                      )}
+
+                      <div>
+                        <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+                          <span className="h-5 w-5 flex items-center justify-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs">→</span>
+                          Recommended Actions
+                        </h4>
+                        <ul className="list-disc list-inside space-y-1.5 text-sm text-muted-foreground pl-7">
+                          {analysisDetails?.recommendedActions && analysisDetails.recommendedActions.length > 0 ? (
+                            analysisDetails.recommendedActions.map((action: string, i: number) => (
+                              <li key={i}>{action}</li>
+                            ))
+                          ) : (
+                            <>
+                              <li>Respond within 24 hours to maintain customer satisfaction</li>
+                              <li>Acknowledge the specific issue mentioned in the review</li>
+                              <li>Offer a resolution or compensation if applicable</li>
+                            </>
+                          )}
+                        </ul>
+                      </div>
+                    </>
+                  );
+                })()}
               </CardContent>
             </Card>
           </TabsContent>

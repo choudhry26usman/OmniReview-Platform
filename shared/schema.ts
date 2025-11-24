@@ -33,6 +33,7 @@ export const reviews = pgTable("reviews", {
   severity: text("severity").notNull(), // low, medium, high, critical
   status: text("status").notNull().default("open"), // open, in_progress, resolved
   aiSuggestedReply: text("ai_suggested_reply"),
+  aiAnalysisDetails: text("ai_analysis_details"), // JSON string with detailed analysis
   verified: integer("verified").default(0), // 0 = false, 1 = true
   createdAt: timestamp("created_at").notNull(), // Review creation date from marketplace
   importedAt: timestamp("imported_at").defaultNow(), // When we imported it

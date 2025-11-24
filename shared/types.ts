@@ -13,4 +13,5 @@ export interface Review {
   status: string;
   createdAt: Date;
   aiSuggestedReply?: string;
+  aiAnalysisDetails?: string;
 }
