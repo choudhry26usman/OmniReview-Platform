@@ -558,8 +558,46 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error: any) {
       console.error("Failed to import Amazon reviews:", error);
+      
+      // Parse error message and status
+      const errorMessage = error.message || "";
+      
+      // Check if it's an Axesso API error with status code
+      const axessoErrorMatch = errorMessage.match(/Axesso API error \((\d+)\)/);
+      
+      if (axessoErrorMatch) {
+        const statusCode = parseInt(axessoErrorMatch[1]);
+        
+        // 404 - Product not found
+        if (statusCode === 404 || errorMessage.includes("could not find product")) {
+          return res.status(404).json({ 
+            error: "Product not found. Please verify the ASIN or product URL and try again. Note: Axesso has limited product coverage on the free tier." 
+          });
+        }
+        
+        // 403 - Subscription issue
+        if (statusCode === 403) {
+          return res.status(403).json({ 
+            error: "Axesso API access denied. Please check your subscription status on RapidAPI." 
+          });
+        }
+        
+        // 429 - Rate limit
+        if (statusCode === 429) {
+          return res.status(429).json({ 
+            error: "Rate limit exceeded. Please try again later." 
+          });
+        }
+        
+        // Other Axesso errors
+        return res.status(400).json({ 
+          error: "Unable to fetch reviews from Amazon. Please check the ASIN/URL and try again." 
+        });
+      }
+      
+      // Non-Axesso errors
       res.status(500).json({ 
-        error: error.message || "Failed to import Amazon reviews" 
+        error: error.message || "Failed to import Amazon reviews. Please try again." 
       });
     }
   });

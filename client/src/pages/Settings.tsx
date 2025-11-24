@@ -36,8 +36,29 @@ export default function Settings() {
 
   const importMutation = useMutation({
     mutationFn: async (asinValue: string) => {
-      const response = await apiRequest("POST", "/api/amazon/import-reviews", { asin: asinValue });
-      return await response.json();
+      const response = await fetch("/api/amazon/import-reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ asin: asinValue }),
+      });
+      
+      // Parse response based on Content-Type
+      const contentType = response.headers.get("content-type");
+      let data;
+      
+      if (contentType?.includes("application/json")) {
+        data = await response.json();
+      } else {
+        // Non-JSON response (e.g., HTML error page)
+        const text = await response.text();
+        data = { error: "Server error occurred. Please try again later." };
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to import reviews");
+      }
+      
+      return data;
     },
     onSuccess: (data: any) => {
       toast({
@@ -45,7 +66,6 @@ export default function Settings() {
         description: `Imported ${data.imported} reviews for "${data.productName}". Check your Dashboard!`,
       });
       setAsin("");
-      // Invalidate the imported reviews and products cache so Dashboard refreshes
       queryClient.invalidateQueries({ queryKey: ["/api/reviews/imported"] });
       queryClient.invalidateQueries({ queryKey: ["/api/products/tracked"] });
     },
@@ -53,15 +73,35 @@ export default function Settings() {
       toast({
         variant: "destructive",
         title: "Import failed",
-        description: error.message || "Please check your ASIN and ensure Axesso is subscribed",
+        description: error.message || "Please check your ASIN and try again",
       });
     },
   });
 
   const shopifyImportMutation = useMutation({
     mutationFn: async (productId: string) => {
-      const response = await apiRequest("POST", "/api/shopify/import-reviews", { productId });
-      return await response.json();
+      const response = await fetch("/api/shopify/import-reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      
+      // Parse response based on Content-Type
+      const contentType = response.headers.get("content-type");
+      let data;
+      
+      if (contentType?.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = { error: "Server error occurred. Please try again later." };
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to import reviews");
+      }
+      
+      return data;
     },
     onSuccess: (data: any) => {
       toast({
@@ -96,8 +136,28 @@ export default function Settings() {
 
   const walmartImportMutation = useMutation({
     mutationFn: async (productUrl: string) => {
-      const response = await apiRequest("POST", "/api/walmart/import-reviews", { productUrl });
-      return await response.json();
+      const response = await fetch("/api/walmart/import-reviews", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productUrl }),
+      });
+      
+      // Parse response based on Content-Type
+      const contentType = response.headers.get("content-type");
+      let data;
+      
+      if (contentType?.includes("application/json")) {
+        data = await response.json();
+      } else {
+        const text = await response.text();
+        data = { error: "Server error occurred. Please try again later." };
+      }
+      
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to import reviews");
+      }
+      
+      return data;
     },
     onSuccess: (data: any) => {
       toast({
@@ -112,7 +172,7 @@ export default function Settings() {
       toast({
         variant: "destructive",
         title: "Import failed",
-        description: error.message || "Please check your Walmart product URL and RAPIDAPI_KEY",
+        description: error.message || "Please check your Walmart product URL",
       });
     },
   });
