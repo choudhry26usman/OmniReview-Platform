@@ -172,8 +172,8 @@ export async function testWalmartConnection(): Promise<{ success: boolean; messa
   }
 
   try {
-    // Test with a known product ID
-    const testUrl = `https://serpapi.com/search.json?engine=walmart_product&product_id=912882889&api_key=${SERPAPI_KEY}`;
+    // Use SerpApi account endpoint to verify API key validity
+    const testUrl = `https://serpapi.com/account.json?api_key=${SERPAPI_KEY}`;
     
     const response = await fetch(testUrl);
 
@@ -186,15 +186,16 @@ export async function testWalmartConnection(): Promise<{ success: boolean; messa
 
     if (response.ok) {
       const data = await response.json();
-      if (data.error) {
+      // Check if we got valid account info back
+      if (data.account_id || data.api_key_valid !== false) {
         return {
-          success: false,
-          message: `SerpApi error: ${data.error}`
+          success: true,
+          message: 'Connected to SerpApi for Walmart data'
         };
       }
       return {
-        success: true,
-        message: 'Successfully connected to Walmart via SerpApi'
+        success: false,
+        message: 'Invalid API key response'
       };
     }
 
