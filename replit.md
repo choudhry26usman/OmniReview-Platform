@@ -6,7 +6,24 @@ DriftSignal is a SaaS platform designed for centralized management of customer r
 
 ## Recent Changes (November 24, 2025)
 
-### Code Optimization & Error Handling Hardening (Latest)
+### UI/UX Refinements & Code Cleanup (Latest)
+- **Added** blue gradient background theme
+  - Light mode: Very light sky blue (top) transitioning to deeper blue (bottom-left)
+  - Dark mode: Darker blue tones with same gradient direction
+  - Gradient uses 30-60% opacity for premium glass-morphic aesthetic
+  - Fixed background attachment for consistent visual experience while scrolling
+- **Simplified** Settings page by removing duplicate importers
+  - Removed redundant Amazon, Shopify, and Walmart import sections from Settings
+  - All product imports now consolidated in Dashboard's "Import Product" modal
+  - Settings page now focuses solely on integration status and configuration
+  - Cleaned up unused imports and mutations (Input, Package, Download, useMutation)
+- **Fixed** AgentMail integration display
+  - Corrected client initialization from `environment` to `baseUrl`
+  - Fixed status check to properly parse `inboxesResponse.inboxes` structure
+  - AgentMail now shows as "Connected" in Settings page
+- **Status**: Platform is production-ready with cleaner, more intuitive UI
+
+### Code Optimization & Error Handling Hardening
 - **Removed** 12 unused/duplicate files for cleaner codebase
   - Deleted entire `client/src/components/examples/` directory (11 duplicate files)
   - Deleted unused `AmazonReviewsPanel.tsx` component
@@ -25,7 +42,6 @@ DriftSignal is a SaaS platform designed for centralized management of customer r
   - All pages (Dashboard, Analytics, Workflow, Settings) verified working
   - All UI components present and interactive
   - No critical bugs found
-- **Status**: Platform is production-ready and optimized
 
 ### Product Refresh Feature
 - **Added** refresh button to each tracked product on Dashboard
