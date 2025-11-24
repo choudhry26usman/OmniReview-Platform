@@ -63,11 +63,12 @@ The application uses PostgreSQL, specifically Neon serverless, via the `@neondat
   - **Endpoint**: `/amz/amazon-lookup-product` (confirmed working)
   - **Known Limitation**: Free tier (BASIC plan - 50 requests/month) has limited product coverage. Many ASINs return "product not found" errors, likely due to Axesso's product indexing limitations or regional availability.
   - **Subscription Required**: User subscribed to RapidAPI free tier via api.rapidapi.com
-- **Walmart API v2 via RapidAPI**: Used for fetching Walmart product reviews and details.
-  - **Status**: Integration configured with RAPIDAPI_KEY
-  - **Base URL**: `walmart2.p.rapidapi.com`
-  - **Endpoint**: `/search` for product search by ID
-  - **Authentication**: Uses RAPIDAPI_KEY secret
+- **SerpApi (Walmart)**: Used for fetching Walmart product reviews and details.
+  - **Status**: Integration configured with SERPAPI_KEY
+  - **Base URL**: `serpapi.com`
+  - **Endpoints**: `/search.json?engine=walmart_product` for product data, `/search.json?engine=walmart_product_reviews` for reviews
+  - **Authentication**: Uses SERPAPI_KEY secret
+  - **Migration**: Replaced RapidAPI walmart2 (deprecated/unreliable) with SerpApi for better uptime and reliability
 - **OpenRouter + Grok 4.1 Fast**: Provides AI capabilities for generating customer service replies and analyzing review sentiment, severity, and category.
 
 ### Replit Platform Integration
