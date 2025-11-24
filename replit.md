@@ -6,7 +6,19 @@ DriftSignal is a SaaS platform designed for centralized management of customer r
 
 ## Recent Changes (November 24, 2025)
 
-### Database Migration to PostgreSQL (Latest)
+### Product Refresh Feature (Latest)
+- **Added** refresh button to each tracked product on Dashboard
+  - Clicking refresh fetches the latest reviews from marketplace API
+  - Uses duplicate detection to skip reviews already in database
+  - Shows loading spinner during refresh operation
+  - Updates last imported timestamp automatically
+  - Displays toast notification with import results
+- **Backend endpoint** `/api/products/refresh` handles re-importing for Amazon and Walmart
+  - Accepts productId and platform as parameters
+  - Returns `imported` and `skipped` counts
+  - Invalidates product and review caches after successful import
+
+### Database Migration to PostgreSQL
 - **Migrated** from in-memory storage to persistent PostgreSQL database
   - Created `products` table with platform, productId, productName, and lastImported tracking
   - Updated `reviews` schema with `externalReviewId`, `productId`, and `productName` fields
