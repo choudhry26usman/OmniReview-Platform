@@ -18,11 +18,11 @@ const sentimentConfig = {
   neutral: { icon: Minus, color: "text-muted-foreground" },
 };
 
-const severityVariants = {
-  low: "secondary",
-  medium: "outline",
-  high: "default",
-  critical: "destructive",
+const severityStyles = {
+  low: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400 border-green-200 dark:border-green-800",
+  medium: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400 border-yellow-200 dark:border-yellow-800",
+  high: "bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-400 border-orange-200 dark:border-orange-800",
+  critical: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border-red-200 dark:border-red-800",
 } as const;
 
 interface ReviewCardProps {
@@ -34,7 +34,7 @@ interface ReviewCardProps {
   rating?: number;
   sentiment: keyof typeof sentimentConfig;
   category: string;
-  severity: keyof typeof severityVariants;
+  severity: keyof typeof severityStyles;
   status: string;
   createdAt: Date;
   onViewDetails: () => void;
@@ -68,7 +68,11 @@ export function ReviewCard({
             </Badge>
           </div>
           <div className="flex items-center gap-2">
-            <Badge variant={severityVariants[severity]} data-testid={`badge-severity-${id}`}>
+            <Badge 
+              variant="outline" 
+              className={cn(severityStyles[severity], "capitalize")}
+              data-testid={`badge-severity-${id}`}
+            >
               {severity}
             </Badge>
             <span className="text-xs text-muted-foreground font-mono">
