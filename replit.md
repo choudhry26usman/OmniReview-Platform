@@ -6,7 +6,24 @@ DriftSignal is a SaaS platform designed for centralized management of customer r
 
 ## Recent Changes (November 24, 2025)
 
-### UI/UX Refinements & Code Cleanup (Latest)
+### Dashboard Metrics Enhancement (Latest)
+- **Implemented** dynamic metrics calculation from actual database data
+  - Total Reviews: Calculated from all imported reviews in database
+  - Avg. Rating: Computed as average of all review ratings with 1 decimal precision
+  - Pending: Counts reviews with "open" or "in_progress" status (unresolved)
+  - Resolved: Counts reviews with "resolved" status
+- **Added** defensive rating parsing to prevent NaN errors
+  - Uses Number() conversion with isNaN check for robustness
+  - Handles potential string ratings gracefully
+- **Fixed** status filtering to match actual schema values
+  - Corrected pending filter from incorrect "new"/"pending" to actual "open"/"in_progress" statuses
+  - Now accurately reflects database schema: "open" (default), "in_progress", "resolved"
+- **Verified** metrics accuracy via end-to-end testing
+  - Test confirmed: Pending=19, Resolved=1, Total=20 (all calculations correct)
+  - Metrics update in real-time as reviews are imported or status changes
+- **Status**: Dashboard metrics fully integrated with live database data
+
+### UI/UX Refinements & Code Cleanup
 - **Added** blue gradient background theme
   - Light mode: Very light sky blue (top) transitioning to deeper blue (bottom-left)
   - Dark mode: Darker blue tones with same gradient direction
@@ -21,7 +38,6 @@ DriftSignal is a SaaS platform designed for centralized management of customer r
   - Corrected client initialization from `environment` to `baseUrl`
   - Fixed status check to properly parse `inboxesResponse.inboxes` structure
   - AgentMail now shows as "Connected" in Settings page
-- **Status**: Platform is production-ready with cleaner, more intuitive UI
 
 ### Code Optimization & Error Handling Hardening
 - **Removed** 12 unused/duplicate files for cleaner codebase

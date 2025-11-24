@@ -136,6 +136,34 @@ export default function Dashboard() {
     return [...mockReviews, ...imported];
   }, [importedReviewsData]);
 
+  // Calculate dashboard metrics from actual data
+  const metrics = useMemo(() => {
+    const reviews = allReviews;
+    const totalReviews = reviews.length;
+    
+    // Calculate average rating with defensive parsing
+    const ratingsSum = reviews.reduce((sum, review) => {
+      const rating = Number(review.rating);
+      return sum + (isNaN(rating) ? 0 : rating);
+    }, 0);
+    const avgRating = totalReviews > 0 ? (ratingsSum / totalReviews).toFixed(1) : "0.0";
+    
+    // Calculate pending (open or in_progress status - all unresolved reviews)
+    const pending = reviews.filter(r => 
+      r.status === "open" || r.status === "in_progress"
+    ).length;
+    
+    // Calculate resolved
+    const resolved = reviews.filter(r => r.status === "resolved").length;
+    
+    return {
+      totalReviews,
+      avgRating,
+      pending,
+      resolved,
+    };
+  }, [allReviews]);
+
   const handleSyncEmails = async () => {
     try {
       const result = await refetchEmails();
@@ -347,29 +375,26 @@ export default function Dashboard() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Reviews"
-          value="142"
+          value={metrics.totalReviews.toString()}
           icon={MessageSquare}
-          trend={{ value: "12%", isPositive: true }}
           testId="stat-total-reviews"
         />
         <StatCard
           title="Avg. Rating"
-          value="4.2"
+          value={metrics.avgRating}
           icon={TrendingUp}
-          trend={{ value: "0.3", isPositive: true }}
           testId="stat-avg-rating"
         />
         <StatCard
           title="Pending"
-          value="23"
+          value={metrics.pending.toString()}
           icon={Clock}
           testId="stat-pending"
         />
         <StatCard
           title="Resolved"
-          value="119"
+          value={metrics.resolved.toString()}
           icon={CheckCircle}
-          trend={{ value: "8%", isPositive: true }}
           testId="stat-resolved"
         />
       </div>
