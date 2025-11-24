@@ -1,9 +1,19 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { useQuery } from "@tanstack/react-query";
-import { Mail, Zap, CheckCircle, XCircle, ExternalLink, RefreshCw, Loader2, ShoppingCart, Store } from "lucide-react";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { Mail, Zap, CheckCircle, XCircle, ExternalLink, RefreshCw, Loader2, ShoppingCart, Store, UserCheck } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useState } from "react";
 
 interface IntegrationStatus {
   name: string;
@@ -23,9 +33,32 @@ interface ConnectionStatusResponse {
 
 export default function Settings() {
   const { toast } = useToast();
+  const [showOutlookInstructions, setShowOutlookInstructions] = useState(false);
+  const [outlookInstructions, setOutlookInstructions] = useState<string[]>([]);
 
   const { data: statusData, isLoading, refetch, isFetching } = useQuery<ConnectionStatusResponse>({
     queryKey: ['/api/integrations/status'],
+  });
+
+  const reconnectOutlookMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/integrations/outlook/reconnect', {
+        method: 'POST',
+      });
+      if (!response.ok) throw new Error('Failed to get reconnection instructions');
+      return response.json();
+    },
+    onSuccess: (data) => {
+      setOutlookInstructions(data.instructions || []);
+      setShowOutlookInstructions(true);
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message || "Failed to get reconnection instructions",
+        variant: "destructive",
+      });
+    },
   });
 
 
@@ -53,7 +86,30 @@ export default function Settings() {
   };
 
   return (
-    <div className="p-6 space-y-6">
+    <>
+      <AlertDialog open={showOutlookInstructions} onOpenChange={setShowOutlookInstructions}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Change Outlook Account</AlertDialogTitle>
+            <AlertDialogDescription className="space-y-3">
+              <p>Follow these steps to change your Outlook account to <strong>drift_signal@outlook.com</strong>:</p>
+              <ol className="list-decimal list-inside space-y-2 text-sm">
+                {outlookInstructions.map((instruction, index) => (
+                  <li key={index}>{instruction}</li>
+                ))}
+              </ol>
+              <p className="text-xs text-muted-foreground pt-2">
+                After reconnecting, refresh this page to see the updated connection status.
+              </p>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction>Got it</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
@@ -188,7 +244,7 @@ export default function Settings() {
                     {statusData.outlook.details}
                   </p>
                 )}
-                <div className="flex gap-2">
+                <div className="flex gap-2 flex-wrap">
                   <Button
                     variant="outline"
                     size="sm"
@@ -196,6 +252,16 @@ export default function Settings() {
                     data-testid="button-test-outlook"
                   >
                     Test Connection
+                  </Button>
+                  <Button
+                    variant="default"
+                    size="sm"
+                    onClick={() => reconnectOutlookMutation.mutate()}
+                    disabled={reconnectOutlookMutation.isPending}
+                    data-testid="button-change-outlook-account"
+                  >
+                    <UserCheck className="h-3 w-3 mr-1" />
+                    Change Account
                   </Button>
                   <Button
                     variant="outline"
@@ -484,5 +550,6 @@ export default function Settings() {
         </p>
       </div>
     </div>
+    </>
   );
 }

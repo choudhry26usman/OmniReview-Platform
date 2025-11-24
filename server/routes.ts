@@ -1282,6 +1282,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Trigger Outlook reconnection
+  app.post("/api/integrations/outlook/reconnect", async (req, res) => {
+    try {
+      res.json({ 
+        success: true, 
+        message: "Please reconnect Outlook in the Tools panel",
+        instructions: [
+          "1. Open the Tools panel (left sidebar in Replit)",
+          "2. Find 'Outlook' in the list of integrations",
+          "3. Click the settings icon or 'Disconnect' if currently connected",
+          "4. Click 'Connect' to sign in with drift_signal@outlook.com",
+          "5. Authorize the permissions when prompted by Microsoft"
+        ]
+      });
+    } catch (error: any) {
+      console.error("Error triggering Outlook reconnection:", error);
+      res.status(500).json({ error: error.message || "Failed to trigger reconnection" });
+    }
+  });
+
   // Check integration status
   app.get("/api/integrations/status", async (req, res) => {
     const status = {
