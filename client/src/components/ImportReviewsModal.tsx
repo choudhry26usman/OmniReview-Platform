@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Upload, FileJson, FileSpreadsheet, Download } from "lucide-react";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useMutation } from "@tanstack/react-query";
+import { queryClient } from "@/lib/queryClient";
 
 interface ImportReviewsModalProps {
   open: boolean;
@@ -21,6 +23,44 @@ export function ImportReviewsModal({ open, onOpenChange }: ImportReviewsModalPro
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [marketplace, setMarketplace] = useState<string>("");
   const { toast } = useToast();
+
+  const importMutation = useMutation({
+    mutationFn: async ({ file, marketplace }: { file: File; marketplace: string }) => {
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('marketplace', marketplace);
+
+      const response = await fetch('/api/reviews/import-file', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to import reviews');
+      }
+
+      return response.json();
+    },
+    onSuccess: (data) => {
+      toast({
+        title: "Import Complete",
+        description: `Successfully imported ${data.imported} reviews${data.skipped > 0 ? ` (${data.skipped} skipped)` : ''}.`,
+      });
+      queryClient.invalidateQueries({ queryKey: ['/api/reviews/imported'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/products/tracked'] });
+      onOpenChange(false);
+      setSelectedFile(null);
+      setMarketplace("");
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Import Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    }
+  });
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -49,18 +89,10 @@ export function ImportReviewsModal({ open, onOpenChange }: ImportReviewsModalPro
 
     toast({
       title: "Import Started",
-      description: `Importing reviews from ${selectedFile.name} for ${marketplace}...`,
+      description: `Processing reviews from ${selectedFile.name}... This may take a few moments.`,
     });
 
-    setTimeout(() => {
-      toast({
-        title: "Import Complete",
-        description: `Successfully imported reviews from ${marketplace}.`,
-      });
-      onOpenChange(false);
-      setSelectedFile(null);
-      setMarketplace("");
-    }, 2000);
+    importMutation.mutate({ file: selectedFile, marketplace });
   };
 
   const handleDownloadTemplate = () => {
@@ -172,11 +204,11 @@ export function ImportReviewsModal({ open, onOpenChange }: ImportReviewsModalPro
           </Button>
           <Button
             onClick={handleImport}
-            disabled={!selectedFile || !marketplace}
+            disabled={!selectedFile || !marketplace || importMutation.isPending}
             data-testid="button-start-import"
           >
             <Upload className="h-4 w-4 mr-2" />
-            Import Reviews
+            {importMutation.isPending ? "Importing..." : "Import Reviews"}
           </Button>
         </div>
       </DialogContent>

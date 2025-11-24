@@ -331,7 +331,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
 
           // Analyze review with AI
-          const analysis = await analyzeReview(reviewText);
+          const analysis = await analyzeReview(reviewText, customerName, marketplace);
           
           // Generate AI reply
           const aiReply = await generateReply(
