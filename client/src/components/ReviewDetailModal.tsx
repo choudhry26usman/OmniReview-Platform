@@ -136,7 +136,7 @@ export function ReviewDetailModal({ open, onOpenChange, review }: ReviewDetailMo
           </div>
           <DialogTitle className="text-2xl">{review.title}</DialogTitle>
           <DialogDescription>
-            Review from {review.customerName} • {review.createdAt.toLocaleDateString()}
+            Review from {review.customerName} • {new Date(review.createdAt).toLocaleDateString()}
           </DialogDescription>
         </DialogHeader>
 
