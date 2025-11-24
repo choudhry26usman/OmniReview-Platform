@@ -17,6 +17,7 @@ import {
 import { Separator } from "@/components/ui/separator";
 import driftSignalLogo from "@assets/Gemini_Generated_Image_20rbpd20rbpd20rb_1763885742664.png";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
+import { AdvancedFiltersModal } from "@/components/AdvancedFiltersModal";
 
 const mainMenuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, testId: "link-dashboard" },
@@ -35,6 +36,7 @@ const marketplaces = [
 export function AppSidebar() {
   const [location, navigate] = useLocation();
   const [importModalOpen, setImportModalOpen] = useState(false);
+  const [filtersModalOpen, setFiltersModalOpen] = useState(false);
   
   const activeMarketplace = useMemo(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -132,7 +134,10 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton data-testid="button-filters">
+                  <SidebarMenuButton 
+                    data-testid="button-filters"
+                    onClick={() => setFiltersModalOpen(true)}
+                  >
                     <Filter className="h-4 w-4" />
                     <span>Advanced Filters</span>
                   </SidebarMenuButton>
@@ -146,6 +151,11 @@ export function AppSidebar() {
       <ImportReviewsModal 
         open={importModalOpen}
         onOpenChange={setImportModalOpen}
+      />
+      
+      <AdvancedFiltersModal 
+        open={filtersModalOpen}
+        onOpenChange={setFiltersModalOpen}
       />
     </>
   );
