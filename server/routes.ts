@@ -365,18 +365,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Store in global array
-      if (!global.importedReviews) {
-        global.importedReviews = [];
+      // Save all processed reviews to database with duplicate detection
+      let importedCount = 0;
+      let skippedCount = 0;
+      
+      for (const processedReview of processedReviews) {
+        try {
+          const externalReviewId = processedReview.id;
+          
+          // Check for duplicates
+          if (externalReviewId) {
+            const exists = await storage.checkReviewExists(externalReviewId, marketplace);
+            if (exists) {
+              console.log(`⊘ Skipping duplicate review: ${externalReviewId}`);
+              skippedCount++;
+              continue;
+            }
+          }
+          
+          await storage.createReview({
+            externalReviewId,
+            marketplace: processedReview.marketplace,
+            productId: null,
+            title: processedReview.title,
+            content: processedReview.content,
+            customerName: processedReview.customerName,
+            customerEmail: processedReview.customerEmail,
+            rating: processedReview.rating,
+            sentiment: processedReview.sentiment,
+            category: processedReview.category,
+            severity: processedReview.severity,
+            status: processedReview.status,
+            createdAt: processedReview.createdAt,
+            aiSuggestedReply: processedReview.aiSuggestedReply,
+            verified: processedReview.verified ? 1 : 0,
+          });
+          
+          importedCount++;
+        } catch (error) {
+          console.error(`Failed to save review:`, error);
+          skippedCount++;
+        }
       }
-      global.importedReviews.push(...processedReviews);
 
-      console.log(`Successfully imported ${processedReviews.length} reviews from file`);
+      console.log(`Successfully imported ${importedCount} reviews from file (${skippedCount} duplicates skipped)`);
 
       res.json({ 
-        imported: processedReviews.length,
-        skipped: reviews.length - processedReviews.length,
-        message: `Successfully imported ${processedReviews.length} reviews`
+        imported: importedCount,
+        skipped: skippedCount + (reviews.length - processedReviews.length),
+        message: `Successfully imported ${importedCount} reviews`
       });
     } catch (error: any) {
       console.error("Error importing reviews from file:", error);
@@ -789,45 +826,72 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }
       }
 
-      // Store in global reviews array (in-memory for now)
-      if (!global.importedReviews) {
-        global.importedReviews = [];
+      // Save all processed reviews to database
+      let importedCount = 0;
+      let skippedCount = 0;
+      
+      for (const processedReview of processedReviews) {
+        try {
+          // Extract a unique review identifier if available
+          const externalReviewId = processedReview.id;
+          
+          // Check for duplicates
+          if (externalReviewId) {
+            const exists = await storage.checkReviewExists(externalReviewId, "Walmart");
+            if (exists) {
+              console.log(`⊘ Skipping duplicate review: ${externalReviewId}`);
+              skippedCount++;
+              continue;
+            }
+          }
+          
+          await storage.createReview({
+            externalReviewId,
+            marketplace: processedReview.marketplace,
+            productId,
+            title: processedReview.title,
+            content: processedReview.content,
+            customerName: processedReview.customerName,
+            customerEmail: processedReview.customerEmail,
+            rating: processedReview.rating,
+            sentiment: processedReview.sentiment,
+            category: processedReview.category,
+            severity: processedReview.severity,
+            status: processedReview.status,
+            createdAt: processedReview.createdAt,
+            aiSuggestedReply: processedReview.aiSuggestedReply,
+            verified: processedReview.verified ? 1 : 0,
+          });
+          
+          importedCount++;
+        } catch (error) {
+          console.error(`Failed to save review:`, error);
+          skippedCount++;
+        }
       }
-      global.importedReviews.push(...processedReviews);
 
-      // Track the product
-      if (!global.trackedProducts) {
-        global.trackedProducts = [];
-      }
+      // Track the product in database
+      const existingProduct = await storage.getProductByIdentifier("Walmart", productId);
       
-      const existingProductIndex = global.trackedProducts.findIndex(
-        p => p.productId === productId && p.platform === "Walmart"
-      );
-      
-      if (existingProductIndex >= 0) {
-        global.trackedProducts[existingProductIndex] = {
-          ...global.trackedProducts[existingProductIndex],
-          reviewCount: global.trackedProducts[existingProductIndex].reviewCount + processedReviews.length,
-          lastImported: new Date(),
-        };
+      if (existingProduct) {
+        await storage.updateProductLastImported(existingProduct.id);
+        console.log(`✓ Updated product tracking for "${productName}"`);
       } else {
-        global.trackedProducts.push({
-          id: `product-walmart-${productId}`,
+        await storage.createProduct({
           platform: "Walmart",
           productId,
           productName,
-          reviewCount: processedReviews.length,
-          lastImported: new Date(),
         });
+        console.log(`✓ Added product to tracking: "${productName}"`);
       }
 
-      console.log(`✓ Successfully imported ${processedReviews.length} Walmart reviews for "${productName}"`);
+      console.log(`✓ Successfully imported ${importedCount} Walmart reviews for "${productName}" (${skippedCount} duplicates skipped)`);
       
       res.json({
-        imported: processedReviews.length,
+        imported: importedCount,
+        skipped: skippedCount,
         productId,
         productName,
-        reviews: processedReviews
       });
     } catch (error: any) {
       console.error("Failed to import Walmart reviews:", error);
