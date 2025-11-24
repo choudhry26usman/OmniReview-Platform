@@ -240,6 +240,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             sentiment: analysis.sentiment,
             category: analysis.category,
             severity: analysis.severity,
+            createdAt: new Date(msg.receivedDateTime),
             status: 'open',
             aiSuggestedReply: aiReply,
             verified: 0,
