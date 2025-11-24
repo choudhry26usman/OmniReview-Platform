@@ -386,33 +386,45 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Import Amazon reviews - fetch from Axesso and process through AI
   app.post("/api/amazon/import-reviews", async (req, res) => {
     try {
-      let { asin } = req.body;
+      let { asin, productUrl } = req.body;
       
-      if (!asin || typeof asin !== 'string') {
-        return res.status(400).json({ error: "ASIN is required" });
+      // Accept either ASIN or productUrl
+      const productIdentifier = productUrl || asin;
+      
+      if (!productIdentifier || typeof productIdentifier !== 'string') {
+        return res.status(400).json({ error: "Product URL or ASIN is required" });
       }
       
-      // Sanitize ASIN: remove invisible Unicode characters, whitespace, and trim
-      asin = asin
+      // Sanitize: remove invisible Unicode characters, whitespace, and trim
+      const sanitized = productIdentifier
         .replace(/[\u200B-\u200F\u202A-\u202E\uFEFF]/g, '') // Remove invisible Unicode chars
-        .replace(/\s+/g, '') // Remove all whitespace
         .trim();
       
-      console.log(`Importing reviews for ASIN: ${asin}`);
+      // Extract ASIN from URL if provided
+      let extractedAsin = sanitized;
+      if (sanitized.includes('amazon')) {
+        // Try to extract ASIN from URL patterns like /dp/ASIN or /gp/product/ASIN
+        const asinMatch = sanitized.match(/\/(?:dp|gp\/product)\/([A-Z0-9]{10})/i);
+        if (asinMatch) {
+          extractedAsin = asinMatch[1];
+        }
+      }
+      
+      console.log(`Importing Amazon reviews for: ${sanitized} (ASIN: ${extractedAsin})`);
       
       // Fetch reviews from Axesso
       const { getProductReviews } = await import("./integrations/axesso");
-      const result = await getProductReviews(asin);
+      const result = await getProductReviews(sanitized);
       
       if (!result.reviews || result.reviews.length === 0) {
         return res.json({ 
           imported: 0, 
-          message: "No reviews found for this ASIN" 
+          message: "No reviews found for this product" 
         });
       }
 
       // Extract product info from the result
-      const productName = (result as any).productTitle || `Amazon Product ${asin}`;
+      const productName = (result as any).productTitle || `Amazon Product ${extractedAsin}`;
       
       console.log(`Processing ${result.reviews.length} reviews for "${productName}"...`);
       
@@ -444,7 +456,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           );
 
           const processedReview = {
-            id: `amazon-${asin}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            id: `amazon-${extractedAsin}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
             marketplace: "Amazon" as const,
             title: reviewTitle,
             content: reviewText,
@@ -458,7 +470,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             createdAt: new Date(reviewDate),
             aiSuggestedReply: aiReply,
             verified: true,
-            asin: asin,
+            asin: extractedAsin,
           };
 
           processedReviews.push(processedReview);
@@ -481,7 +493,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Check if product already exists, update or add
       const existingProductIndex = global.trackedProducts.findIndex(
-        p => p.productId === asin && p.platform === "Amazon"
+        p => p.productId === extractedAsin && p.platform === "Amazon"
       );
       
       if (existingProductIndex >= 0) {
@@ -492,9 +504,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       } else {
         global.trackedProducts.push({
-          id: `product-${asin}`,
+          id: `product-amazon-${extractedAsin}`,
           platform: "Amazon",
-          productId: asin,
+          productId: extractedAsin,
           productName,
           reviewCount: processedReviews.length,
           lastImported: new Date(),
@@ -505,7 +517,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       res.json({
         imported: processedReviews.length,
-        asin,
+        asin: extractedAsin,
         productName,
         reviews: processedReviews
       });
