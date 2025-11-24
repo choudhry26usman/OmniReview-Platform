@@ -1326,9 +1326,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     // Check AgentMail
     try {
       const agentMail = await getUncachableAgentMailClient();
-      const inboxes = await (agentMail as any).inboxes.list();
+      const inboxesResponse = await (agentMail as any).inboxes.list();
+      const inboxCount = Array.isArray(inboxesResponse?.inboxes) ? inboxesResponse.inboxes.length : 0;
       status.agentmail.connected = true;
-      status.agentmail.details = `Connected with ${inboxes.data?.length || 0} inbox(es)`;
+      status.agentmail.details = `Connected with ${inboxCount} inbox(es)`;
     } catch (error: any) {
       status.agentmail.connected = false;
       status.agentmail.details = error.message || "Not configured";
