@@ -597,39 +597,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Importing Amazon reviews for: ${sanitized} (ASIN: ${extractedAsin})`);
       
-      // HYBRID APPROACH: Axesso for product title + Apify for reviews (up to 500)
+      // Try Apify first (supports more reviews), fall back to Axesso
       const { isApifyConfigured, getAmazonReviews, convertApifyReview } = await import("./integrations/apify");
-      const { getProductReviews, getProductDetails, isAxessoConfigured } = await import("./integrations/axesso");
+      const { getProductReviews } = await import("./integrations/axesso");
       
       let rawReviews: any[] = [];
       let productName = `Amazon Product ${extractedAsin}`;
       let usedApify = false;
       
-      // Step 1: Get product title from Axesso (fast, single call)
-      if (isAxessoConfigured()) {
-        try {
-          console.log("Fetching product title from Axesso...");
-          const productUrl = sanitized.startsWith('http') 
-            ? sanitized 
-            : `https://www.amazon.com/dp/${extractedAsin}`;
-          const productDetails = await getProductDetails(productUrl);
-          if (productDetails?.productTitle) {
-            productName = productDetails.productTitle;
-            console.log(`Got product title: "${productName}"`);
-          }
-        } catch (error: any) {
-          console.warn("Could not fetch product title from Axesso:", error?.message);
-        }
-      }
-      
-      // Step 2: Get reviews from Apify (supports up to 500 reviews)
       const apifyConfigured = isApifyConfigured();
       console.log(`Apify configured: ${apifyConfigured}, APIFY_API_TOKEN exists: ${!!process.env.APIFY_API_TOKEN}`);
       
       if (apifyConfigured) {
-        console.log("Using Apify for reviews (requesting up to 500 reviews)...");
+        console.log("Using Apify for Amazon import (requesting 50 reviews)...");
         try {
-          const { reviews: apifyReviews } = await getAmazonReviews(sanitized, 500);
+          const { reviews: apifyReviews } = await getAmazonReviews(sanitized, 50);
           console.log(`Apify returned ${apifyReviews.length} reviews`);
           
           // Convert Apify reviews to standard format
@@ -645,38 +627,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
               verified: converted.verified,
             };
           });
-          
-          // Sort by date - most recent first
-          rawReviews.sort((a, b) => {
-            const dateA = new Date(a.date).getTime();
-            const dateB = new Date(b.date).getTime();
-            return dateB - dateA; // Descending order (newest first)
-          });
-          
           usedApify = true;
-          console.log(`Reviews sorted by date (most recent first)`);
         } catch (error: any) {
           console.error("Apify failed with error:", error?.message || error);
-          console.log("Falling back to Axesso for reviews...");
+          console.log("Falling back to Axesso...");
         }
       }
       
       // Fallback to Axesso if Apify not configured or failed
       if (rawReviews.length === 0) {
-        console.log("Using Axesso for reviews (limited to ~8 reviews)...");
+        console.log("Using Axesso for Amazon import (limited to ~8 reviews)...");
         const result = await getProductReviews(sanitized);
         rawReviews = result.reviews || [];
-        // Also get product title from Axesso if not already fetched
-        if (productName.startsWith('Amazon Product')) {
-          productName = (result as any).productTitle || productName;
-        }
-        
-        // Sort Axesso reviews by date too
-        rawReviews.sort((a: any, b: any) => {
-          const dateA = new Date(a.date || 0).getTime();
-          const dateB = new Date(b.date || 0).getTime();
-          return dateB - dateA;
-        });
+        productName = (result as any).productTitle || productName;
       }
       
       if (rawReviews.length === 0) {
@@ -1250,63 +1213,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       // Fetch latest reviews based on platform
       if (platform === "Amazon") {
-        // HYBRID APPROACH: Use Apify for reviews (up to 500), sorted by most recent
+        // Try Apify first (supports amazon.ca, amazon.com, etc. with pagination)
+        // Fall back to Axesso if Apify is not configured
         const { isApifyConfigured, getAmazonReviews, convertApifyReview } = await import("./integrations/apify");
         const { getProductReviews } = await import("./integrations/axesso");
         
         let reviewsToProcess: Array<any> = [];
-        let allReviews: Array<any> = [];
         
         const apifyConfigured = isApifyConfigured();
         console.log(`Apify configured: ${apifyConfigured}, APIFY_API_TOKEN exists: ${!!process.env.APIFY_API_TOKEN}`);
         
         if (apifyConfigured) {
-          console.log("Using Apify for Amazon reviews (requesting up to 500)...");
+          console.log("Using Apify for Amazon reviews (requesting 50)...");
           try {
-            const { reviews } = await getAmazonReviews(productId, 500);
+            const { reviews } = await getAmazonReviews(productId, 50);
             console.log(`Apify returned ${reviews.length} reviews`);
             
-            // Convert all reviews first
-            allReviews = reviews.map(review => {
+            for (const review of reviews) {
               const converted = convertApifyReview(review);
-              return {
+              const exists = await storage.checkReviewExists(converted.externalReviewId, "Amazon", userId);
+              if (exists) {
+                skippedCount++;
+                continue;
+              }
+              reviewsToProcess.push({
                 externalReviewId: converted.externalReviewId,
                 reviewText: converted.content,
                 userName: converted.customerName,
                 reviewTitle: converted.title,
                 ratingString: converted.rating.toString(),
                 reviewDate: converted.reviewDate.toISOString(),
-              };
-            });
-            
-            // Sort by date - most recent first
-            allReviews.sort((a, b) => {
-              const dateA = new Date(a.reviewDate).getTime();
-              const dateB = new Date(b.reviewDate).getTime();
-              return dateB - dateA;
-            });
-            console.log(`Reviews sorted by date (most recent first)`);
-            
-            // Filter out duplicates
-            for (const review of allReviews) {
-              const exists = await storage.checkReviewExists(review.externalReviewId, "Amazon", userId);
-              if (exists) {
-                skippedCount++;
-                continue;
-              }
-              reviewsToProcess.push(review);
+              });
             }
           } catch (error: any) {
             console.error("Apify failed with error:", error?.message || error);
             console.log("Falling back to Axesso...");
             reviewsToProcess = [];
-            allReviews = [];
           }
         }
         
         // Fallback to Axesso if Apify not configured or failed
-        if (allReviews.length === 0) {
-          console.log("Using Axesso for Amazon reviews (limited to ~8 reviews)...");
+        if (reviewsToProcess.length === 0 && skippedCount === 0) {
+          console.log("Using Axesso for Amazon reviews (limited to ~8 reviews)... Reason: Apify not configured or failed");
           const result = await getProductReviews(productId);
           
           if (!result.reviews || result.reviews.length === 0) {
@@ -1317,14 +1265,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             });
           }
 
-          // Sort Axesso reviews by date too
-          const sortedReviews = [...result.reviews].sort((a: any, b: any) => {
-            const dateA = new Date(a.date || 0).getTime();
-            const dateB = new Date(b.date || 0).getTime();
-            return dateB - dateA;
-          });
-
-          for (const review of sortedReviews) {
+          for (const review of result.reviews) {
             const externalReviewId = (review as any).reviewId || (review as any).id || null;
             if (externalReviewId) {
               const exists = await storage.checkReviewExists(externalReviewId, "Amazon", userId);

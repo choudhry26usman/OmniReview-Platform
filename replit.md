@@ -40,14 +40,9 @@ The frontend uses Wouter for routing and TanStack Query for server state managem
 
 ### Third-Party APIs
 - **Microsoft Graph API (Outlook)**: For email synchronization and sending.
-- **Amazon Reviews (Hybrid Approach)**:
-  - **Axesso API**: Fetches product title/details via RapidAPI (1 call per product)
-    - **Base URL**: `axesso-axesso-amazon-data-service-v1.p.rapidapi.com`
-    - **Endpoint**: `/amz/amazon-lookup-product`
-  - **Apify API**: Fetches up to 500 reviews via `junglee/amazon-reviews-scraper`
-    - Reviews are sorted by date (most recent first) before storage
-    - Supports multiple Amazon domains (amazon.com, amazon.ca, etc.)
-    - Falls back to Axesso (~8 reviews) if Apify fails
+- **Axesso Amazon Data Service API**: Fetches Amazon product reviews and details via RapidAPI.
+  - **Base URL**: `axesso-axesso-amazon-data-service-v1.p.rapidapi.com`
+  - **Endpoint**: `/amz/amazon-lookup-product`
 - **SerpApi (Walmart)**: Fetches Walmart product reviews and details.
   - **Base URL**: `serpapi.com`
   - **Endpoints**: `/search.json?engine=walmart_product`, `/search.json?engine=walmart_product_reviews`
