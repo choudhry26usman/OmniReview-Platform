@@ -69,12 +69,25 @@ Provide a comprehensive, detailed analysis of each review.
 
 Sentiment options: positive, negative, neutral
 Severity options: low (minor issue or praise), medium (moderate concern), high (serious problem), critical (urgent issue requiring immediate attention)
-Category: A brief 1-2 word category like "sound quality", "shipping delay", "product defect", "customer service", "pricing", etc.
+
+Category MUST be one of these standardized values (choose the closest match):
+- "Product Quality" - issues with build, materials, durability, craftsmanship
+- "Product Performance" - doesn't work as expected, functionality issues
+- "Shipping & Delivery" - late delivery, damaged in transit, wrong item sent
+- "Packaging" - poor packaging, damaged box, missing components
+- "Customer Service" - support experience, response time, helpfulness
+- "Value & Pricing" - too expensive, not worth the price, pricing concerns
+- "Sizing & Fit" - wrong size, doesn't fit as described
+- "Color & Appearance" - color mismatch, looks different than photos
+- "Setup & Instructions" - difficult to assemble, poor instructions
+- "Compatibility" - doesn't work with other products/systems
+- "Safety Concern" - potential hazard, safety issue
+- "Praise & Satisfaction" - for positive reviews expressing general satisfaction
 
 Provide detailed analysis with:
 - sentiment: overall sentiment (positive/negative/neutral)
 - severity: severity level (low/medium/high/critical)
-- category: primary issue category (be specific, e.g., "sound quality" not just "quality")
+- category: MUST be one of the standardized categories listed above
 - reasoning: brief explanation of the analysis
 - specificIssues: array of specific problems mentioned (e.g., ["Audio cuts out during bass-heavy scenes", "External speakers required for acceptable sound"])
 - positiveAspects: array of positive things mentioned, if any (e.g., ["Good picture quality", "Bright colors"])
