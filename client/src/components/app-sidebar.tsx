@@ -1,4 +1,4 @@
-import { LayoutDashboard, Workflow, BarChart3, Upload, Filter, Settings, Mail, Grid } from "lucide-react";
+import { LayoutDashboard, Workflow, BarChart3, Upload, Filter, Settings, Mail, Grid, LogOut, User } from "lucide-react";
 import { SiAmazon, SiShopify, SiWalmart } from "react-icons/si";
 import { Link, useLocation } from "wouter";
 import { useState, useMemo } from "react";
@@ -12,11 +12,22 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarHeader,
+  SidebarFooter,
 } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import driftSignalLogo from "@assets/Gemini_Generated_Image_20rbpd20rbpd20rb_1763885742664.png";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
 import { AdvancedFiltersModal } from "@/components/AdvancedFiltersModal";
+import { useAuth } from "@/hooks/useAuth";
 
 const mainMenuItems = [
   { title: "Dashboard", url: "/", icon: LayoutDashboard, testId: "link-dashboard" },
@@ -36,6 +47,31 @@ export function AppSidebar() {
   const [location, navigate] = useLocation();
   const [importModalOpen, setImportModalOpen] = useState(false);
   const [filtersModalOpen, setFiltersModalOpen] = useState(false);
+  const { user } = useAuth();
+
+  const handleLogout = () => {
+    window.location.href = "/api/logout";
+  };
+
+  const getUserInitials = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName[0]}${user.lastName[0]}`.toUpperCase();
+    }
+    if (user?.firstName) {
+      return user.firstName.slice(0, 2).toUpperCase();
+    }
+    return "U";
+  };
+
+  const getDisplayName = () => {
+    if (user?.firstName && user?.lastName) {
+      return `${user.firstName} ${user.lastName}`;
+    }
+    if (user?.firstName) {
+      return user.firstName;
+    }
+    return "User";
+  };
   
   const activeMarketplace = useMemo(() => {
     const searchParams = new URLSearchParams(window.location.search);
@@ -163,6 +199,52 @@ export function AppSidebar() {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
+
+        {user && (
+          <SidebarFooter className="border-t border-sidebar-border p-4">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  className="w-full justify-start gap-3 px-2 hover-elevate"
+                  data-testid="button-user-menu"
+                >
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.profileImageUrl || undefined} alt={getDisplayName()} />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-xs">
+                      {getUserInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col items-start text-left overflow-hidden">
+                    <span className="text-sm font-medium truncate max-w-[120px]">
+                      {getDisplayName()}
+                    </span>
+                    <span className="text-xs text-muted-foreground truncate max-w-[120px]">
+                      {user.email}
+                    </span>
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <Link href="/account" className="flex items-center gap-2 cursor-pointer" data-testid="link-account">
+                    <User className="h-4 w-4" />
+                    <span>Account Settings</span>
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem 
+                  onClick={handleLogout}
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                  data-testid="button-logout"
+                >
+                  <LogOut className="h-4 w-4 mr-2" />
+                  <span>Sign Out</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarFooter>
+        )}
       </Sidebar>
       
       <ImportReviewsModal 
