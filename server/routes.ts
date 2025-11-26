@@ -609,9 +609,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       console.log(`Apify configured: ${apifyConfigured}, APIFY_API_TOKEN exists: ${!!process.env.APIFY_API_TOKEN}`);
       
       if (apifyConfigured) {
-        console.log("Using Apify for Amazon import (requesting 20 reviews)...");
+        console.log("Using Apify for Amazon import (requesting 50 reviews)...");
         try {
-          const { reviews: apifyReviews } = await getAmazonReviews(sanitized, 20);
+          const { reviews: apifyReviews } = await getAmazonReviews(sanitized, 50);
           console.log(`Apify returned ${apifyReviews.length} reviews`);
           
           // Convert Apify reviews to standard format
@@ -1137,9 +1137,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`Apify configured: ${apifyConfigured}, APIFY_API_TOKEN exists: ${!!process.env.APIFY_API_TOKEN}`);
         
         if (apifyConfigured) {
-          console.log("Using Apify for Amazon reviews (requesting 20)...");
+          console.log("Using Apify for Amazon reviews (requesting 50)...");
           try {
-            const { reviews } = await getAmazonReviews(productId, 20);
+            const { reviews } = await getAmazonReviews(productId, 50);
             console.log(`Apify returned ${reviews.length} reviews`);
             
             for (const review of reviews) {
