@@ -147,8 +147,10 @@ export async function searchProducts(keyword: string, page: number = 1): Promise
 /**
  * Get product details and reviews by Amazon URL or ASIN
  * Uses the dedicated reviews endpoint for more comprehensive review fetching
+ * @param asinOrUrl - Amazon product URL or ASIN
+ * @param numberOfReviews - Number of reviews to fetch (default 50, max depends on API tier)
  */
-export async function getProductReviews(asinOrUrl: string, page: number = 1): Promise<{ reviews: AxessoReview[], productTitle?: string }> {
+export async function getProductReviews(asinOrUrl: string, numberOfReviews: number = 50): Promise<{ reviews: AxessoReview[], productTitle?: string }> {
   // Convert ASIN to Amazon URL format
   const url = asinOrUrl.startsWith('http') 
     ? asinOrUrl 
@@ -156,10 +158,14 @@ export async function getProductReviews(asinOrUrl: string, page: number = 1): Pr
   
   try {
     // First try the dedicated reviews endpoint which can fetch more reviews
+    // Pass numberOfReviews to request more reviews from the API
     const reviewsResult = await axessoRequest<any>('/amz/amazon-lookup-reviews', { 
       url,
-      sortBy: 'recent'
+      sortBy: 'recent',
+      numberOfReviews: numberOfReviews.toString()
     });
+    
+    console.log(`Axesso reviews endpoint returned ${reviewsResult.reviews?.length || 0} reviews`);
     
     if (reviewsResult.reviews && reviewsResult.reviews.length > 0) {
       return { 
@@ -171,11 +177,12 @@ export async function getProductReviews(asinOrUrl: string, page: number = 1): Pr
     console.log('Reviews endpoint failed, falling back to product lookup:', error);
   }
   
-  // Fallback to the product lookup endpoint
+  // Fallback to the product lookup endpoint (limited to ~8 reviews)
   const result = await axessoRequest<any>('/amz/amazon-lookup-product', { url });
   
   // Extract reviews from the product details response
   const reviews = result.reviews || [];
+  console.log(`Axesso product lookup returned ${reviews.length} reviews`);
   
   return { 
     reviews,
