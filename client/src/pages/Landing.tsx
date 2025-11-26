@@ -1,14 +1,14 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import driftSignalLogo from "@assets/drift-signal-logo.svg";
 import { 
   BarChart3, 
   MessageSquare, 
   Shield, 
   Zap, 
   Star, 
-  TrendingUp 
+  TrendingUp,
+  Activity
 } from "lucide-react";
 
 export default function Landing() {
@@ -20,11 +20,9 @@ export default function Landing() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <header className="flex items-center justify-between p-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <img 
-            src={driftSignalLogo} 
-            alt="DriftSignal Logo" 
-            className="h-10 w-10"
-          />
+          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
+            <Activity className="h-6 w-6 text-white" />
+          </div>
           <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
             DriftSignal
           </span>
