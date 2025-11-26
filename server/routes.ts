@@ -597,21 +597,61 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       console.log(`Importing Amazon reviews for: ${sanitized} (ASIN: ${extractedAsin})`);
       
-      // Fetch reviews from Axesso
+      // Try Apify first (supports more reviews), fall back to Axesso
+      const { isApifyConfigured, getAmazonReviews, convertApifyReview } = await import("./integrations/apify");
       const { getProductReviews } = await import("./integrations/axesso");
-      const result = await getProductReviews(sanitized);
       
-      if (!result.reviews || result.reviews.length === 0) {
+      let rawReviews: any[] = [];
+      let productName = `Amazon Product ${extractedAsin}`;
+      let usedApify = false;
+      
+      const apifyConfigured = isApifyConfigured();
+      console.log(`Apify configured: ${apifyConfigured}, APIFY_API_TOKEN exists: ${!!process.env.APIFY_API_TOKEN}`);
+      
+      if (apifyConfigured) {
+        console.log("Using Apify for Amazon import (requesting 20 reviews)...");
+        try {
+          const { reviews: apifyReviews } = await getAmazonReviews(sanitized, 20);
+          console.log(`Apify returned ${apifyReviews.length} reviews`);
+          
+          // Convert Apify reviews to standard format
+          rawReviews = apifyReviews.map(review => {
+            const converted = convertApifyReview(review);
+            return {
+              reviewId: converted.externalReviewId,
+              text: converted.content,
+              userName: converted.customerName,
+              title: converted.title,
+              rating: converted.rating.toString(),
+              date: converted.reviewDate.toISOString(),
+              verified: converted.verified,
+            };
+          });
+          usedApify = true;
+        } catch (error: any) {
+          console.error("Apify failed with error:", error?.message || error);
+          console.log("Falling back to Axesso...");
+        }
+      }
+      
+      // Fallback to Axesso if Apify not configured or failed
+      if (rawReviews.length === 0) {
+        console.log("Using Axesso for Amazon import (limited to ~8 reviews)...");
+        const result = await getProductReviews(sanitized);
+        rawReviews = result.reviews || [];
+        productName = (result as any).productTitle || productName;
+      }
+      
+      if (rawReviews.length === 0) {
         return res.json({ 
           imported: 0, 
           message: "No reviews found for this product" 
         });
       }
-
-      // Extract product info from the result
-      const productName = (result as any).productTitle || `Amazon Product ${extractedAsin}`;
       
-      console.log(`Processing ${result.reviews.length} reviews for "${productName}" in parallel...`);
+      console.log(`Fetched ${rawReviews.length} reviews via ${usedApify ? 'Apify' : 'Axesso'} for "${productName}"`);
+      
+      console.log(`Processing ${rawReviews.length} reviews for "${productName}" in parallel...`);
       
       // Filter out duplicates first
       const reviewsToProcess: Array<{
@@ -626,7 +666,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let skippedCount = 0;
       
-      for (const review of result.reviews) {
+      for (const review of rawReviews) {
         const externalReviewId = (review as any).reviewId || (review as any).id || null;
         if (externalReviewId) {
           const exists = await storage.checkReviewExists(externalReviewId, "Amazon", userId);
