@@ -188,6 +188,11 @@ export async function getAmazonReviews(
   
   console.log(`Apify: Fetched ${reviews.length} reviews for ASIN ${asin}`);
   
+  // Log first review to debug field mapping
+  if (reviews.length > 0) {
+    console.log(`Apify: Sample review structure:`, JSON.stringify(reviews[0], null, 2));
+  }
+  
   return { reviews, asin };
 }
 
