@@ -6,7 +6,7 @@ import { ReviewCard } from "@/components/ReviewCard";
 import { ReviewDetailModal } from "@/components/ReviewDetailModal";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
 import { ImportProductModal } from "@/components/ImportProductModal";
-import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Package, ShoppingCart } from "lucide-react";
+import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Package, ShoppingCart, ExternalLink } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useToast } from "@/hooks/use-toast";
@@ -343,19 +343,39 @@ export default function Dashboard() {
                               Last: {new Date(product.lastImported).toLocaleDateString()}
                             </span>
                           </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => handleRefreshProduct(product.productId, product.platform)}
-                            disabled={refreshingProductId === product.productId}
-                            data-testid={`button-refresh-${product.productId}`}
-                          >
-                            {refreshingProductId === product.productId ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              <RefreshCw className="h-4 w-4" />
-                            )}
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => {
+                                let url = '';
+                                if (product.platform === 'Amazon') {
+                                  url = `https://www.amazon.com/dp/${product.productId}`;
+                                } else if (product.platform === 'Walmart') {
+                                  url = `https://www.walmart.com/ip/${product.productId}`;
+                                }
+                                if (url) window.open(url, '_blank');
+                              }}
+                              title="View product on marketplace"
+                              data-testid={`button-view-product-${product.productId}`}
+                            >
+                              <ExternalLink className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={() => handleRefreshProduct(product.productId, product.platform)}
+                              disabled={refreshingProductId === product.productId}
+                              title="Refresh reviews"
+                              data-testid={`button-refresh-${product.productId}`}
+                            >
+                              {refreshingProductId === product.productId ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <RefreshCw className="h-4 w-4" />
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>

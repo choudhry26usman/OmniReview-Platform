@@ -146,21 +146,41 @@ export async function searchProducts(keyword: string, page: number = 1): Promise
 
 /**
  * Get product details and reviews by Amazon URL or ASIN
+ * Uses the dedicated reviews endpoint for more comprehensive review fetching
  */
-export async function getProductReviews(asinOrUrl: string, page: number = 1): Promise<{ reviews: AxessoReview[] }> {
+export async function getProductReviews(asinOrUrl: string, page: number = 1): Promise<{ reviews: AxessoReview[], productTitle?: string }> {
   // Convert ASIN to Amazon URL format
   const url = asinOrUrl.startsWith('http') 
     ? asinOrUrl 
     : `https://www.amazon.com/dp/${asinOrUrl}`;
   
-  // Use the product lookup endpoint which includes reviews
+  try {
+    // First try the dedicated reviews endpoint which can fetch more reviews
+    const reviewsResult = await axessoRequest<any>('/amz/amazon-lookup-reviews', { 
+      url,
+      sortBy: 'recent'
+    });
+    
+    if (reviewsResult.reviews && reviewsResult.reviews.length > 0) {
+      return { 
+        reviews: reviewsResult.reviews,
+        productTitle: reviewsResult.productTitle
+      };
+    }
+  } catch (error) {
+    console.log('Reviews endpoint failed, falling back to product lookup:', error);
+  }
+  
+  // Fallback to the product lookup endpoint
   const result = await axessoRequest<any>('/amz/amazon-lookup-product', { url });
   
   // Extract reviews from the product details response
-  // Axesso returns reviews as part of the product data
   const reviews = result.reviews || [];
   
-  return { reviews };
+  return { 
+    reviews,
+    productTitle: result.productTitle
+  };
 }
 
 /**
