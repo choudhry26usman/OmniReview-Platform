@@ -141,9 +141,12 @@ export async function getAmazonReviews(
   
   const productUrl = `https://www.${domain}/dp/${asin}`;
   
+  console.log(`Apify: Using product URL: ${productUrl}`);
+  
   const runInput = {
-    productUrls: [productUrl],
+    productUrls: [{ url: productUrl }],  // Must be array of objects with url field
     maxReviews: maxReviews,
+    filterByRatings: ["allStars"],
     proxyConfiguration: {
       useApifyProxy: true
     }
