@@ -24,10 +24,15 @@ The frontend uses Wouter for routing and TanStack Query for server state managem
 - **Email Integration**: Outlook-only architecture for automatic email monitoring, classification, and review import, as well as sending customer replies.
 - **Data Import/Export**: CSV/JSON file import with AI processing; export filtered reviews as CSV.
 - **Product Tracking**: Automatically tracks imported products, updates last import timestamps, and prevents duplicate reviews.
+- **User Authentication**: Secure multi-user authentication via Replit Auth (OpenID Connect). Each user only sees their own reviews and products.
+- **Account Management**: User profile display in sidebar footer with dropdown menu for account settings and sign-out.
 
 ### System Design Choices
-- **Data Storage**: Persistent PostgreSQL database via Neon serverless, using Drizzle ORM for schema definition (`reviews`, `products`, `users` tables).
+- **Data Storage**: Persistent PostgreSQL database via Neon serverless, using Drizzle ORM for schema definition (`reviews`, `products`, `users`, `sessions` tables).
 - **Abstraction Layer**: `DBStorage` class implements `IStorage` for CRUD operations, ensuring separation of concerns.
+- **User Data Isolation**: Reviews and products are scoped by userId. Each user only sees and manages their own data.
+- **Session Management**: PostgreSQL-backed session storage using connect-pg-simple for persistent sessions.
+- **Authentication Flow**: Replit Auth with OpenID Connect. Routes: `/api/login`, `/api/logout`, `/api/callback`, `/api/auth/user`.
 - **Error Handling**: Hardened error handling across all API integrations with proper message propagation.
 - **Code Optimization**: Cleaned codebase by removing unused files and consolidating import sections.
 
