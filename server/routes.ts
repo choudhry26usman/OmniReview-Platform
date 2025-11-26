@@ -1093,10 +1093,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
         
         let reviewsToProcess: Array<any> = [];
         
-        if (isApifyConfigured()) {
-          console.log("Using Apify for Amazon reviews...");
+        const apifyConfigured = isApifyConfigured();
+        console.log(`Apify configured: ${apifyConfigured}, APIFY_API_TOKEN exists: ${!!process.env.APIFY_API_TOKEN}`);
+        
+        if (apifyConfigured) {
+          console.log("Using Apify for Amazon reviews (requesting 20)...");
           try {
             const { reviews } = await getAmazonReviews(productId, 20);
+            console.log(`Apify returned ${reviews.length} reviews`);
             
             for (const review of reviews) {
               const converted = convertApifyReview(review);
@@ -1114,15 +1118,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
                 reviewDate: converted.reviewDate.toISOString(),
               });
             }
-          } catch (error) {
-            console.error("Apify failed, falling back to Axesso:", error);
+          } catch (error: any) {
+            console.error("Apify failed with error:", error?.message || error);
+            console.log("Falling back to Axesso...");
             reviewsToProcess = [];
           }
         }
         
         // Fallback to Axesso if Apify not configured or failed
         if (reviewsToProcess.length === 0 && skippedCount === 0) {
-          console.log("Using Axesso for Amazon reviews (limited to ~8 reviews)...");
+          console.log("Using Axesso for Amazon reviews (limited to ~8 reviews)... Reason: Apify not configured or failed");
           const result = await getProductReviews(productId);
           
           if (!result.reviews || result.reviews.length === 0) {
