@@ -146,10 +146,14 @@ export async function getAmazonReviews(
   
   console.log(`Apify: Using product URL: ${productUrl}`);
   
+  // To maximize reviews, we need to either:
+  // 1. Set maxReviews > 100 to trigger pagination across star ratings
+  // 2. OR not use filterByRatings at all
+  // The scraper can fetch up to 100 reviews per star rating (500 total max)
   const runInput = {
     productUrls: [{ url: productUrl }],  // Must be array of objects with url field
-    maxReviews: maxReviews,
-    filterByRatings: ["allStars"],
+    maxReviews: Math.max(maxReviews, 500),  // Request at least 500 to trigger full pagination
+    // Don't set filterByRatings - let it fetch from all pages
     proxyConfiguration: {
       useApifyProxy: true
     }
