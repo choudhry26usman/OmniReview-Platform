@@ -1050,7 +1050,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         if (isApifyConfigured()) {
           console.log("Using Apify for Amazon reviews...");
           try {
-            const { reviews } = await getAmazonReviews(productId, 100);
+            const { reviews } = await getAmazonReviews(productId, 20);
             
             for (const review of reviews) {
               const converted = convertApifyReview(review);
