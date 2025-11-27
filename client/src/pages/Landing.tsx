@@ -7,9 +7,9 @@ import {
   Shield, 
   Zap, 
   Star, 
-  TrendingUp,
-  Activity
+  TrendingUp
 } from "lucide-react";
+import driftSignalLogo from "@assets/Gemini_Generated_Image_20rbpd20rbpd20rb_1763885742664.png";
 
 export default function Landing() {
   const handleLogin = () => {
@@ -20,10 +20,12 @@ export default function Landing() {
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-100 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       <header className="flex items-center justify-between p-6 max-w-7xl mx-auto">
         <div className="flex items-center gap-3">
-          <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-blue-600 to-blue-400 flex items-center justify-center">
-            <Activity className="h-6 w-6 text-white" />
-          </div>
-          <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">
+          <img 
+            src={driftSignalLogo} 
+            alt="DriftSignal Logo" 
+            className="h-10 w-10"
+          />
+          <span className="text-2xl font-bold text-foreground">
             DriftSignal
           </span>
         </div>
