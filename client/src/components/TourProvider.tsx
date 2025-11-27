@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { TourContext } from "@/hooks/use-tour";
-import "shepherd.js/dist/shepherd.css";
+import "shepherd.js/dist/css/shepherd.css";
 
 interface TourProviderProps {
   children: React.ReactNode;
