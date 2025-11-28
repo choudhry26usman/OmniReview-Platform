@@ -4,10 +4,25 @@ import { ReviewDetailModal } from "@/components/ReviewDetailModal";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
 
 export default function WorkflowManagement() {
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<string>("all");
   const { toast } = useToast();
+
+  // Fetch tracked products
+  const { data: productsData } = useQuery<{ products: any[] }>({
+    queryKey: ['/api/products/tracked'],
+  });
+
+  const products = productsData?.products || [];
 
   // Fetch all imported reviews
   const { data: importedReviewsData } = useQuery<{ reviews: any[]; total: number }>({
@@ -15,8 +30,16 @@ export default function WorkflowManagement() {
   });
 
   const allReviews = useMemo(() => {
-    return importedReviewsData?.reviews || [];
-  }, [importedReviewsData]);
+    const reviews = importedReviewsData?.reviews || [];
+    
+    // Filter by selected product
+    if (selectedProduct && selectedProduct !== "all") {
+      const [platform, productId] = selectedProduct.split('-');
+      return reviews.filter(r => r.marketplace === platform && r.productId === productId);
+    }
+    
+    return reviews;
+  }, [importedReviewsData, selectedProduct]);
 
   // Organize reviews into columns by status
   const workflowColumns: WorkflowColumn[] = useMemo(() => {
@@ -113,11 +136,32 @@ export default function WorkflowManagement() {
 
   return (
     <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold">Workflow Management</h1>
-        <p className="text-sm text-muted-foreground">
-          Organize and track review progress by dragging cards between workflow stages
-        </p>
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <div>
+          <h1 className="text-2xl font-semibold">Workflow Management</h1>
+          <p className="text-sm text-muted-foreground">
+            Organize and track review progress by dragging cards between workflow stages
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3 flex-wrap">
+          <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+            <SelectTrigger 
+              className="w-auto bg-primary/20 border-primary/30 text-foreground rounded-full px-4 text-sm" 
+              data-testid="select-product-workflow"
+            >
+              <SelectValue placeholder="All products" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All products</SelectItem>
+              {products.map((product: any) => (
+                <SelectItem key={`${product.platform}-${product.productId}`} value={`${product.platform}-${product.productId}`}>
+                  {product.productName} ({product.platform})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       <WorkflowBoard columns={workflowColumns} onReviewMove={handleReviewMove} onCardClick={handleCardClick} />
