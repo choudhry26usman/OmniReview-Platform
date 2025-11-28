@@ -39,12 +39,13 @@ export function TourProvider({ children }: TourProviderProps) {
       });
 
       newTour.addSteps([
+        // ===== WELCOME =====
         {
           id: "welcome",
           title: "Welcome to DriftSignal!",
           text: `
             <p>Let's take a quick tour of the platform to help you manage customer reviews across all your marketplaces.</p>
-            <p class="mt-2 text-sm text-muted-foreground">This tour will guide you through the key features.</p>
+            <p class="mt-2 text-sm text-muted-foreground">We'll visit each module and explore the key features.</p>
           `,
           buttons: [
             {
@@ -58,17 +59,14 @@ export function TourProvider({ children }: TourProviderProps) {
             },
           ],
         },
+
+        // ===== DASHBOARD MODULE =====
         {
-          id: "sidebar-nav",
-          title: "Navigation Sidebar",
+          id: "dashboard-intro",
+          title: "Dashboard Overview",
           text: `
-            <p>This is your main navigation. From here you can access:</p>
-            <ul class="mt-2 text-sm space-y-1">
-              <li><strong>Dashboard</strong> - View all your reviews</li>
-              <li><strong>Workflow</strong> - Manage review status</li>
-              <li><strong>Analytics</strong> - Track trends</li>
-              <li><strong>Settings</strong> - Configure integrations</li>
-            </ul>
+            <p>This is your <strong>Dashboard</strong> - your central hub for all reviews.</p>
+            <p class="mt-2 text-sm">Here you can see tracked products, summary stats, and all imported reviews at a glance.</p>
           `,
           attachTo: {
             element: '[data-testid="link-dashboard"]',
@@ -90,7 +88,7 @@ export function TourProvider({ children }: TourProviderProps) {
           id: "import-reviews",
           title: "Import Reviews",
           text: `
-            <p><strong>Click this button</strong> to import reviews from:</p>
+            <p><strong>Import Reviews</strong> from multiple sources:</p>
             <ul class="mt-2 text-sm space-y-1">
               <li>Amazon (via product URL or ASIN)</li>
               <li>Walmart (via product URL)</li>
@@ -98,71 +96,10 @@ export function TourProvider({ children }: TourProviderProps) {
               <li>CSV/JSON file uploads</li>
               <li>Email inbox (Outlook)</li>
             </ul>
-            <p class="mt-2 text-sm text-primary font-medium">Click "Import Reviews" to try it!</p>
+            <p class="mt-2 text-sm">Reviews are automatically analyzed by AI for sentiment, category, and severity.</p>
           `,
           attachTo: {
             element: '[data-testid="button-import"]',
-            on: "right",
-          },
-          advanceOn: {
-            selector: '[data-testid="button-import"]',
-            event: "click",
-          },
-          buttons: [
-            {
-              text: "Back",
-              action() { this.back(); },
-              secondary: true,
-            },
-            {
-              text: "Skip This Step",
-              action() { this.next(); },
-            },
-          ],
-        },
-        {
-          id: "import-modal",
-          title: "Import Modal",
-          text: `
-            <p>This is the Import Reviews modal. You can:</p>
-            <ul class="mt-2 text-sm space-y-1">
-              <li>Select a marketplace tab</li>
-              <li>Enter the product URL or ID</li>
-              <li>Upload a CSV/JSON file</li>
-            </ul>
-            <p class="mt-2 text-sm">Reviews are automatically analyzed by AI for sentiment, category, and severity.</p>
-            <p class="mt-2 text-sm text-primary font-medium">Close this modal to continue the tour.</p>
-          `,
-          attachTo: {
-            element: '[role="dialog"]',
-            on: "left",
-          },
-          buttons: [
-            {
-              text: "Continue Tour",
-              action() { 
-                const closeBtn = document.querySelector('[role="dialog"] button[aria-label="Close"]') as HTMLButtonElement;
-                if (closeBtn) closeBtn.click();
-                this.next(); 
-              },
-            },
-          ],
-        },
-        {
-          id: "marketplace-filters",
-          title: "Marketplace Filters",
-          text: `
-            <p>Filter reviews by marketplace:</p>
-            <ul class="mt-2 text-sm space-y-1">
-              <li><strong>All Marketplaces</strong> - See everything</li>
-              <li><strong>Amazon</strong> - Amazon reviews only</li>
-              <li><strong>Walmart</strong> - Walmart reviews only</li>
-              <li><strong>Shopify</strong> - Shopify reviews only</li>
-              <li><strong>Mailbox</strong> - Email imports</li>
-            </ul>
-          `,
-          attachTo: {
-            element: '[data-testid="link-marketplace-all"]',
             on: "right",
           },
           buttons: [
@@ -181,14 +118,14 @@ export function TourProvider({ children }: TourProviderProps) {
           id: "advanced-filters",
           title: "Advanced Filters",
           text: `
-            <p>Need more filtering options?</p>
-            <p class="mt-2 text-sm">Use <strong>Advanced Filters</strong> to filter by:</p>
+            <p>Use <strong>Advanced Filters</strong> to narrow down reviews by:</p>
             <ul class="mt-2 text-sm space-y-1">
+              <li>Marketplace (Amazon, Walmart, Shopify, Email)</li>
               <li>Date range</li>
               <li>Sentiment (positive/negative/neutral)</li>
               <li>Severity level</li>
               <li>Status (open/in-progress/resolved)</li>
-              <li>Product category</li>
+              <li>Product</li>
             </ul>
             <p class="mt-2 text-sm">You can also export filtered data as CSV.</p>
           `,
@@ -209,20 +146,21 @@ export function TourProvider({ children }: TourProviderProps) {
           ],
         },
         {
-          id: "go-to-workflow",
-          title: "Workflow Management",
+          id: "dashboard-stats",
+          title: "Dashboard Stats",
           text: `
-            <p>Now let's see the <strong>Workflow Board</strong>!</p>
-            <p class="mt-2 text-sm">This is where you organize review responses using a Kanban-style board.</p>
-            <p class="mt-2 text-sm text-primary font-medium">Click "Workflow Management" to continue.</p>
+            <p>These <strong>stat cards</strong> give you a quick overview:</p>
+            <ul class="mt-2 text-sm space-y-1">
+              <li><strong>Total Reviews</strong> - All imported reviews</li>
+              <li><strong>Avg. Rating</strong> - Average star rating</li>
+              <li><strong>Pending</strong> - Reviews awaiting action</li>
+              <li><strong>Resolved</strong> - Completed reviews</li>
+            </ul>
+            <p class="mt-2 text-sm">Stats update based on your active filters.</p>
           `,
           attachTo: {
-            element: '[data-testid="link-workflow"]',
-            on: "right",
-          },
-          advanceOn: {
-            selector: '[data-testid="link-workflow"]',
-            event: "click",
+            element: '[data-testid="stat-total-reviews"]',
+            on: "bottom",
           },
           buttons: [
             {
@@ -231,30 +169,55 @@ export function TourProvider({ children }: TourProviderProps) {
               secondary: true,
             },
             {
-              text: "Skip to Analytics",
+              text: "Go to Workflow",
               action() { 
-                const el = document.querySelector('[data-testid="link-analytics"]') as HTMLElement;
+                const el = document.querySelector('[data-testid="link-workflow"]') as HTMLElement;
                 if (el) el.click();
-                setTimeout(() => this.show("analytics-page"), 300);
+                setTimeout(() => this.next(), 400);
               },
             },
           ],
         },
+
+        // ===== WORKFLOW MODULE =====
         {
-          id: "workflow-page",
-          title: "Kanban Workflow Board",
+          id: "workflow-intro",
+          title: "Workflow Management",
           text: `
-            <p>This is your <strong>Workflow Board</strong>!</p>
+            <p>Welcome to <strong>Workflow Management</strong>!</p>
+            <p class="mt-2 text-sm">This Kanban-style board helps you organize and track review responses through different stages.</p>
+          `,
+          beforeShowPromise: function() {
+            return new Promise<void>((resolve) => setTimeout(resolve, 400));
+          },
+          buttons: [
+            {
+              text: "Back",
+              action() { 
+                const el = document.querySelector('[data-testid="link-dashboard"]') as HTMLElement;
+                if (el) el.click();
+                setTimeout(() => this.back(), 400);
+              },
+              secondary: true,
+            },
+            {
+              text: "Next",
+              action() { this.next(); },
+            },
+          ],
+        },
+        {
+          id: "workflow-columns",
+          title: "Kanban Columns",
+          text: `
+            <p>Reviews move through three stages:</p>
             <ul class="mt-2 text-sm space-y-1">
               <li><strong>Open</strong> - New reviews needing attention</li>
               <li><strong>In Progress</strong> - Currently being handled</li>
               <li><strong>Resolved</strong> - Completed reviews</li>
             </ul>
-            <p class="mt-2 text-sm">Drag and drop cards between columns to update their status.</p>
+            <p class="mt-2 text-sm"><strong>Drag and drop</strong> cards between columns to update their status instantly.</p>
           `,
-          beforeShowPromise: function() {
-            return new Promise<void>((resolve) => setTimeout(resolve, 300));
-          },
           buttons: [
             {
               text: "Back",
@@ -262,83 +225,216 @@ export function TourProvider({ children }: TourProviderProps) {
               secondary: true,
             },
             {
-              text: "Next: Analytics",
-              action() { 
-                const el = document.querySelector('[data-testid="link-analytics"]') as HTMLElement;
-                if (el) el.click();
-                setTimeout(() => this.next(), 300);
-              },
-            },
-          ],
-        },
-        {
-          id: "analytics-page",
-          title: "Analytics Dashboard",
-          text: `
-            <p>Welcome to <strong>Analytics</strong>!</p>
-            <p class="mt-2 text-sm">Here you can see:</p>
-            <ul class="mt-2 text-sm space-y-1">
-              <li>Rating distribution charts</li>
-              <li>Sentiment breakdowns</li>
-              <li>Status distribution</li>
-              <li>Trends over time</li>
-            </ul>
-            <p class="mt-2 text-sm">All charts respect your current filters.</p>
-          `,
-          beforeShowPromise: function() {
-            return new Promise<void>((resolve) => setTimeout(resolve, 300));
-          },
-          buttons: [
-            {
-              text: "Back",
-              action() { this.back(); },
-              secondary: true,
-            },
-            {
-              text: "Next: Settings",
-              action() { 
-                const el = document.querySelector('[data-testid="link-settings"]') as HTMLElement;
-                if (el) el.click();
-                setTimeout(() => this.next(), 300);
-              },
-            },
-          ],
-        },
-        {
-          id: "settings-page",
-          title: "Settings & Integrations",
-          text: `
-            <p>This is the <strong>Settings</strong> page.</p>
-            <p class="mt-2 text-sm">Here you can:</p>
-            <ul class="mt-2 text-sm space-y-1">
-              <li>Check API integration status</li>
-              <li>Connect your Outlook email</li>
-              <li>Verify AI, Amazon, and Walmart connections</li>
-            </ul>
-            <p class="mt-2 text-sm">Green checkmarks indicate active connections.</p>
-          `,
-          beforeShowPromise: function() {
-            return new Promise<void>((resolve) => setTimeout(resolve, 300));
-          },
-          buttons: [
-            {
-              text: "Back",
-              action() { this.back(); },
-              secondary: true,
-            },
-            {
-              text: "Final Step",
+              text: "Next",
               action() { this.next(); },
             },
           ],
         },
+        {
+          id: "workflow-filters",
+          title: "Workflow Filters",
+          text: `
+            <p>Use the <strong>filter panel</strong> to focus on specific reviews:</p>
+            <ul class="mt-2 text-sm space-y-1">
+              <li>Filter by product, marketplace, sentiment</li>
+              <li>Filter by severity and rating</li>
+              <li>Set date range for time-based views</li>
+            </ul>
+            <p class="mt-2 text-sm">Click on any card to view full details and generate AI replies.</p>
+          `,
+          buttons: [
+            {
+              text: "Back",
+              action() { this.back(); },
+              secondary: true,
+            },
+            {
+              text: "Go to Analytics",
+              action() { 
+                const el = document.querySelector('[data-testid="link-analytics"]') as HTMLElement;
+                if (el) el.click();
+                setTimeout(() => this.next(), 400);
+              },
+            },
+          ],
+        },
+
+        // ===== ANALYTICS MODULE =====
+        {
+          id: "analytics-intro",
+          title: "Analytics Dashboard",
+          text: `
+            <p>Welcome to <strong>Analytics</strong>!</p>
+            <p class="mt-2 text-sm">Visualize your review data with interactive charts and track trends over time.</p>
+          `,
+          beforeShowPromise: function() {
+            return new Promise<void>((resolve) => setTimeout(resolve, 400));
+          },
+          buttons: [
+            {
+              text: "Back",
+              action() { 
+                const el = document.querySelector('[data-testid="link-workflow"]') as HTMLElement;
+                if (el) el.click();
+                setTimeout(() => this.back(), 400);
+              },
+              secondary: true,
+            },
+            {
+              text: "Next",
+              action() { this.next(); },
+            },
+          ],
+        },
+        {
+          id: "analytics-charts",
+          title: "Analytics Charts",
+          text: `
+            <p>Key visualizations include:</p>
+            <ul class="mt-2 text-sm space-y-1">
+              <li><strong>Rating Distribution</strong> - Star rating breakdown</li>
+              <li><strong>Sentiment Analysis</strong> - Positive/negative/neutral split</li>
+              <li><strong>Status Distribution</strong> - Open vs resolved reviews</li>
+              <li><strong>Trends Over Time</strong> - Review patterns</li>
+            </ul>
+            <p class="mt-2 text-sm">All charts respect your active filters from the sidebar.</p>
+          `,
+          buttons: [
+            {
+              text: "Back",
+              action() { this.back(); },
+              secondary: true,
+            },
+            {
+              text: "Go to Settings",
+              action() { 
+                const el = document.querySelector('[data-testid="link-settings"]') as HTMLElement;
+                if (el) el.click();
+                setTimeout(() => this.next(), 400);
+              },
+            },
+          ],
+        },
+
+        // ===== SETTINGS MODULE =====
+        {
+          id: "settings-intro",
+          title: "Settings & Integrations",
+          text: `
+            <p>Welcome to <strong>Settings</strong>!</p>
+            <p class="mt-2 text-sm">Manage your integrations and check connection status for all services.</p>
+          `,
+          beforeShowPromise: function() {
+            return new Promise<void>((resolve) => setTimeout(resolve, 400));
+          },
+          buttons: [
+            {
+              text: "Back",
+              action() { 
+                const el = document.querySelector('[data-testid="link-analytics"]') as HTMLElement;
+                if (el) el.click();
+                setTimeout(() => this.back(), 400);
+              },
+              secondary: true,
+            },
+            {
+              text: "Next",
+              action() { this.next(); },
+            },
+          ],
+        },
+        {
+          id: "settings-integrations",
+          title: "Integration Status",
+          text: `
+            <p>Check the status of your integrations:</p>
+            <ul class="mt-2 text-sm space-y-1">
+              <li><strong>AI (OpenRouter)</strong> - Powers sentiment analysis & replies</li>
+              <li><strong>Amazon API</strong> - Fetches Amazon reviews</li>
+              <li><strong>Walmart API</strong> - Fetches Walmart reviews</li>
+              <li><strong>Outlook</strong> - Email sync & sending replies</li>
+            </ul>
+            <p class="mt-2 text-sm">Green checkmarks indicate active connections.</p>
+          `,
+          buttons: [
+            {
+              text: "Back",
+              action() { this.back(); },
+              secondary: true,
+            },
+            {
+              text: "Go to Help & FAQ",
+              action() { 
+                const el = document.querySelector('[data-testid="link-faq"]') as HTMLElement;
+                if (el) el.click();
+                setTimeout(() => this.next(), 400);
+              },
+            },
+          ],
+        },
+
+        // ===== FAQ MODULE =====
+        {
+          id: "faq-intro",
+          title: "Help & FAQ",
+          text: `
+            <p>Welcome to <strong>Help & FAQ</strong>!</p>
+            <p class="mt-2 text-sm">Find answers to common questions and learn how to get the most out of DriftSignal.</p>
+          `,
+          beforeShowPromise: function() {
+            return new Promise<void>((resolve) => setTimeout(resolve, 400));
+          },
+          buttons: [
+            {
+              text: "Back",
+              action() { 
+                const el = document.querySelector('[data-testid="link-settings"]') as HTMLElement;
+                if (el) el.click();
+                setTimeout(() => this.back(), 400);
+              },
+              secondary: true,
+            },
+            {
+              text: "Next",
+              action() { this.next(); },
+            },
+          ],
+        },
+        {
+          id: "faq-features",
+          title: "FAQ Topics",
+          text: `
+            <p>The FAQ covers key topics:</p>
+            <ul class="mt-2 text-sm space-y-1">
+              <li>Importing reviews from marketplaces</li>
+              <li>AI-powered analysis features</li>
+              <li>Responding to reviews</li>
+              <li>Managing workflow status</li>
+              <li>Exporting data</li>
+            </ul>
+            <p class="mt-2 text-sm">You can restart this tour anytime from this page!</p>
+          `,
+          buttons: [
+            {
+              text: "Back",
+              action() { this.back(); },
+              secondary: true,
+            },
+            {
+              text: "Next",
+              action() { this.next(); },
+            },
+          ],
+        },
+
+        // ===== RESPONDING TO REVIEWS =====
         {
           id: "responding-to-reviews",
           title: "Responding to Reviews",
           text: `
             <p><strong>How to respond to reviews:</strong></p>
             <ul class="mt-2 text-sm space-y-2">
-              <li><strong>Amazon/Walmart/Shopify:</strong> Click a review, go to Response tab, generate AI reply, then <strong>Copy Reply</strong> to paste in your seller portal.</li>
+              <li><strong>Amazon/Walmart/Shopify:</strong> Click a review, generate AI reply, then <strong>Copy Reply</strong> to paste in your seller portal.</li>
               <li><strong>Email (Mailbox):</strong> Click a review, generate AI reply, then <strong>Send via Outlook</strong> directly.</li>
             </ul>
             <p class="mt-2 text-sm">AI generates professional responses based on the review content and sentiment.</p>
@@ -351,24 +447,26 @@ export function TourProvider({ children }: TourProviderProps) {
             },
             {
               text: "Finish Tour",
-              action() { this.complete(); },
+              action() { this.next(); },
             },
           ],
         },
+
+        // ===== COMPLETE =====
         {
           id: "complete",
           title: "You're All Set!",
           text: `
-            <p>Congratulations! You now know how to use DriftSignal.</p>
+            <p>Congratulations! You've completed the DriftSignal tour.</p>
             <p class="mt-2 text-sm"><strong>Quick recap:</strong></p>
             <ul class="mt-2 text-sm space-y-1">
-              <li>Import reviews from marketplaces or files</li>
-              <li>AI analyzes sentiment, category & severity</li>
-              <li>Manage workflow with Kanban board</li>
-              <li>Track analytics and trends</li>
-              <li>Respond using AI-generated replies</li>
+              <li><strong>Dashboard</strong> - View & filter all reviews</li>
+              <li><strong>Workflow</strong> - Kanban board for status management</li>
+              <li><strong>Analytics</strong> - Charts & trend analysis</li>
+              <li><strong>Settings</strong> - Integration status</li>
+              <li><strong>Help & FAQ</strong> - Support & this tour</li>
             </ul>
-            <p class="mt-3 text-sm text-primary font-medium">Visit Help & FAQ anytime to restart this tour!</p>
+            <p class="mt-3 text-sm text-primary font-medium">Start importing reviews to get started!</p>
           `,
           buttons: [
             {
