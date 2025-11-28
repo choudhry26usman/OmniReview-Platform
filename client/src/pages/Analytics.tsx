@@ -158,7 +158,7 @@ export default function Analytics() {
             <PopoverTrigger asChild>
               <Button 
                 size="sm" 
-                className="bg-primary text-primary-foreground rounded-full px-4"
+                className="bg-primary text-primary-foreground rounded-full px-4 text-sm"
                 data-testid="button-date-range-header"
               >
                 <Calendar className="h-4 w-4 mr-2" />
@@ -177,7 +177,7 @@ export default function Analytics() {
           
           <Select value={selectedProduct} onValueChange={setSelectedProduct}>
             <SelectTrigger 
-              className="w-auto bg-primary/20 border-primary/30 text-foreground rounded-full px-4" 
+              className="w-auto bg-primary/20 border-primary/30 text-foreground rounded-full px-4 text-sm" 
               data-testid="select-product-header"
             >
               <SelectValue placeholder="Product Select filter" />
@@ -196,7 +196,7 @@ export default function Analytics() {
             <CollapsibleTrigger asChild>
               <Button 
                 size="sm" 
-                className="bg-primary/20 border border-primary/30 text-foreground rounded-full px-4"
+                className="bg-primary/20 border border-primary/30 text-foreground rounded-full px-4 text-sm"
                 data-testid="button-toggle-filters"
               >
                 Sentiment
