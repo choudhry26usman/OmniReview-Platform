@@ -85,6 +85,7 @@ export default function Settings() {
         body: JSON.stringify({
           platform: item.platform,
           productId: item.productId,
+          productName: item.productName,
         }),
       });
       if (!response.ok) {

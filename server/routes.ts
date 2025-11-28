@@ -1263,6 +1263,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Import/re-add a product to tracking (user-scoped)
+  app.post("/api/products/import", isAuthenticated, async (req: any, res) => {
+    try {
+      const userId = req.user?.claims?.sub;
+      const { platform, productId, productName } = req.body;
+      
+      if (!platform || !productId) {
+        return res.status(400).json({ error: "Platform and product ID are required" });
+      }
+
+      // Check if product already exists
+      const existingProduct = await storage.getProductByIdentifier(platform, productId, userId);
+      if (existingProduct) {
+        return res.json({ 
+          success: true, 
+          imported: 0,
+          message: "Product is already being tracked" 
+        });
+      }
+
+      // Create the product entry with a placeholder name (will be updated if we fetch details)
+      const product = await storage.createProduct({
+        userId,
+        platform,
+        productId,
+        productName: productName || productId,
+      });
+
+      console.log(`Re-added product ${productId} (${platform}) for user ${userId}`);
+
+      res.json({ 
+        success: true, 
+        imported: 0,
+        message: "Product added to tracking. Use refresh to fetch reviews.",
+        product
+      });
+    } catch (error: any) {
+      console.error("Failed to import product:", error);
+      res.status(500).json({ error: "Failed to import product" });
+    }
+  });
+
   // Refresh reviews for a specific product (user-scoped)
   app.post("/api/products/refresh", isAuthenticated, async (req: any, res) => {
     try {
