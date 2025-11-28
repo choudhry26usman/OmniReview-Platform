@@ -5,7 +5,8 @@ import {
   CategoryDistributionChart, 
   MarketplaceDistributionChart,
   RatingDistributionChart,
-  StatusDistributionChart
+  StatusDistributionChart,
+  ResponseMetricsCard
 } from "@/components/AnalyticsCharts";
 import { TrendingUp, TrendingDown, Star, Target, Calendar, Filter, X, Download } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
@@ -100,6 +101,7 @@ export default function Analytics() {
   const marketplaceCounts = analyticsData?.marketplaceCounts || {};
   const ratingCounts = analyticsData?.ratingCounts || {};
   const statusCounts = analyticsData?.statusCounts || {};
+  const responseMetrics = analyticsData?.responseMetrics || { avgTimeToProgress: 0, resolvedWithin48h: 0, totalResolved: 0 };
 
   const handleClearFilters = () => {
     setDateRange({ from: undefined, to: undefined });
@@ -486,6 +488,11 @@ export default function Analytics() {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <StatusDistributionChart data={statusCounts} />
+            <ResponseMetricsCard 
+              avgTimeToProgress={responseMetrics.avgTimeToProgress}
+              resolvedWithin48h={responseMetrics.resolvedWithin48h}
+              totalResolved={responseMetrics.totalResolved}
+            />
           </div>
         </>
       )}
