@@ -11,7 +11,7 @@ import {
   DashboardSourceChart, 
   SeverityStatusMatrix 
 } from "@/components/AnalyticsCharts";
-import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Package, ShoppingCart, ExternalLink, Trash2, Calendar, X, ArrowUpDown, ChevronLeft, ChevronRight, LayoutGrid, List } from "lucide-react";
+import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Package, ShoppingCart, ExternalLink, Trash2, Calendar, X, ArrowUpDown, ChevronLeft, ChevronRight, ChevronDown, LayoutGrid, List } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -74,6 +74,7 @@ export default function Dashboard() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(25);
   const [viewMode, setViewMode] = useState<"cards" | "compact">("cards");
+  const [productsExpanded, setProductsExpanded] = useState(true);
   const { toast } = useToast();
 
   const handleClearFilters = () => {
@@ -608,25 +609,41 @@ export default function Dashboard() {
         />
       </div>
 
-      {/* Tracked Products */}
+      {/* Tracked Products - Collapsible */}
       {productsData && productsData.products.length > 0 && (
         <Card data-testid="card-tracked-products">
-          <CardHeader className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4">
-            <div>
-              <CardTitle className="flex items-center gap-2">
+          <CardHeader 
+            className="flex flex-row items-center justify-between gap-1 space-y-0 pb-4 cursor-pointer hover-elevate rounded-t-lg transition-all"
+            onClick={() => setProductsExpanded(!productsExpanded)}
+            data-testid="button-toggle-products"
+          >
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2">
                 <Package className="h-5 w-5" />
-                Tracked Products
-              </CardTitle>
-              <CardDescription>
-                Products you're monitoring for reviews and feedback
-              </CardDescription>
+                <CardTitle className="text-base">Tracked Products</CardTitle>
+              </div>
+              <Badge variant="secondary" data-testid="badge-product-count">
+                {productsData.total} {productsData.total === 1 ? 'product' : 'products'}
+              </Badge>
             </div>
-            <Badge variant="secondary" data-testid="badge-product-count">
-              {productsData.total} {productsData.total === 1 ? 'product' : 'products'}
-            </Badge>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-muted-foreground hidden sm:inline">
+                {productsExpanded ? 'Click to collapse' : 'Click to expand'}
+              </span>
+              <ChevronDown 
+                className={`h-5 w-5 text-muted-foreground transition-transform duration-200 ${
+                  productsExpanded ? 'rotate-0' : '-rotate-90'
+                }`} 
+              />
+            </div>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          <div 
+            className={`overflow-hidden transition-all duration-300 ease-in-out ${
+              productsExpanded ? 'max-h-[2000px] opacity-100' : 'max-h-0 opacity-0'
+            }`}
+          >
+            <CardContent className="pt-0">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {productsData.products.map((product) => (
                 <Card 
                   key={product.id} 
@@ -746,7 +763,8 @@ export default function Dashboard() {
                 </Card>
               ))}
             </div>
-          </CardContent>
+            </CardContent>
+          </div>
         </Card>
       )}
 
