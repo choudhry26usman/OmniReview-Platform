@@ -130,12 +130,16 @@ export default function WorkflowManagement() {
       reviews = reviews.filter(r => selectedRatings.includes(Math.round(r.rating)));
     }
     
-    // Filter by date range
+    // Filter by date range (with end-of-day handling)
     if (dateRange.from || dateRange.to) {
       reviews = reviews.filter(r => {
         const reviewDate = new Date(r.createdAt);
         if (dateRange.from && reviewDate < dateRange.from) return false;
-        if (dateRange.to && reviewDate > dateRange.to) return false;
+        if (dateRange.to) {
+          const endOfDay = new Date(dateRange.to);
+          endOfDay.setHours(23, 59, 59, 999);
+          if (reviewDate > endOfDay) return false;
+        }
         return true;
       });
     }
