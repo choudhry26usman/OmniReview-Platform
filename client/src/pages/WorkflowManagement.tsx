@@ -24,6 +24,7 @@ import { format } from "date-fns";
 type Marketplace = "Amazon" | "Shopify" | "Walmart" | "Mailbox";
 type Sentiment = "positive" | "neutral" | "negative";
 type Status = "open" | "in_progress" | "resolved";
+type Severity = "low" | "medium" | "high" | "critical";
 
 export default function WorkflowManagement() {
   const [selectedReview, setSelectedReview] = useState<any | null>(null);
@@ -35,6 +36,7 @@ export default function WorkflowManagement() {
   const [selectedProduct, setSelectedProduct] = useState<string>("all");
   const [selectedMarketplaces, setSelectedMarketplaces] = useState<Marketplace[]>([]);
   const [selectedSentiments, setSelectedSentiments] = useState<Sentiment[]>([]);
+  const [selectedSeverities, setSelectedSeverities] = useState<Severity[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const { toast } = useToast();
 
@@ -43,6 +45,7 @@ export default function WorkflowManagement() {
     setSelectedProduct("all");
     setSelectedMarketplaces([]);
     setSelectedSentiments([]);
+    setSelectedSeverities([]);
     setSelectedRatings([]);
   };
 
@@ -70,11 +73,20 @@ export default function WorkflowManagement() {
     );
   };
 
+  const toggleSeverity = (severity: Severity) => {
+    setSelectedSeverities(prev =>
+      prev.includes(severity)
+        ? prev.filter(s => s !== severity)
+        : [...prev, severity]
+    );
+  };
+
   const activeFilterCount = 
     (dateRange.from || dateRange.to ? 1 : 0) +
     (selectedProduct && selectedProduct !== 'all' ? 1 : 0) +
     selectedMarketplaces.length +
     selectedSentiments.length +
+    selectedSeverities.length +
     selectedRatings.length;
 
   // Fetch tracked products
@@ -108,6 +120,11 @@ export default function WorkflowManagement() {
       reviews = reviews.filter(r => selectedSentiments.includes(r.sentiment as Sentiment));
     }
     
+    // Filter by severity
+    if (selectedSeverities.length > 0) {
+      reviews = reviews.filter(r => selectedSeverities.includes(r.severity as Severity));
+    }
+    
     // Filter by rating
     if (selectedRatings.length > 0) {
       reviews = reviews.filter(r => selectedRatings.includes(Math.round(r.rating)));
@@ -124,7 +141,7 @@ export default function WorkflowManagement() {
     }
     
     return reviews;
-  }, [importedReviewsData, selectedProduct, selectedMarketplaces, selectedSentiments, selectedRatings, dateRange]);
+  }, [importedReviewsData, selectedProduct, selectedMarketplaces, selectedSentiments, selectedSeverities, selectedRatings, dateRange]);
 
   // Organize reviews into columns by status
   const workflowColumns: WorkflowColumn[] = useMemo(() => {
@@ -329,6 +346,23 @@ export default function WorkflowManagement() {
                         data-testid={`filter-sentiment-${sentiment}-workflow`}
                       >
                         {sentiment}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Severity</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(['low', 'medium', 'high', 'critical'] as Severity[]).map(severity => (
+                      <Badge
+                        key={severity}
+                        variant={selectedSeverities.includes(severity) ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate capitalize text-sm"
+                        onClick={() => toggleSeverity(severity)}
+                        data-testid={`filter-severity-${severity}-workflow`}
+                      >
+                        {severity}
                       </Badge>
                     ))}
                   </div>
