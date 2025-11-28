@@ -77,6 +77,41 @@ export default function Settings() {
     },
   });
 
+  const readdProductMutation = useMutation({
+    mutationFn: async (item: ProductHistoryItem) => {
+      const response = await fetch("/api/products/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          platform: item.platform,
+          productId: item.productId,
+        }),
+      });
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || "Failed to re-add product");
+      }
+      return { ...await response.json(), historyId: item.id };
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['/api/products/tracked'] });
+      queryClient.invalidateQueries({ queryKey: ['/api/reviews/imported'] });
+      // Remove from history after successful re-add
+      deleteHistoryMutation.mutate(data.historyId);
+      toast({
+        title: "Product Re-added",
+        description: `Imported ${data.imported || 0} new review(s)`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Re-add Failed",
+        description: error.message || "Could not re-add product",
+        variant: "destructive",
+      });
+    },
+  });
+
   const getPlatformIcon = (platform: string) => {
     switch (platform) {
       case "Amazon":
@@ -468,6 +503,23 @@ export default function Settings() {
                           <Badge variant="secondary" className="text-xs">Reviews kept</Badge>
                         )}
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          readdProductMutation.mutate(item);
+                        }}
+                        disabled={readdProductMutation.isPending}
+                        data-testid={`button-readd-${item.id}`}
+                      >
+                        {readdProductMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                        ) : (
+                          <RotateCcw className="h-4 w-4 mr-1" />
+                        )}
+                        Re-add
+                      </Button>
                       <Button
                         variant="ghost"
                         size="icon"
