@@ -76,15 +76,19 @@ export function AppSidebar() {
   };
   
   const activeMarketplace = useMemo(() => {
-    const searchParams = new URLSearchParams(window.location.search);
+    // Extract search params from location properly
+    const searchString = location.includes('?') ? location.split('?')[1] : '';
+    const searchParams = new URLSearchParams(searchString);
     return searchParams.get('marketplace');
   }, [location]);
 
   const handleMarketplaceClick = (marketplace: string) => {
-    const currentParams = new URLSearchParams(window.location.search);
+    // Extract search params from location properly
+    const searchString = location.includes('?') ? location.split('?')[1] : '';
+    const currentParams = new URLSearchParams(searchString);
     const currentMarketplace = currentParams.get('marketplace');
     
-    const newParams = new URLSearchParams(window.location.search);
+    const newParams = new URLSearchParams(searchString);
     
     if (currentMarketplace === marketplace) {
       newParams.delete('marketplace');
@@ -97,7 +101,9 @@ export function AppSidebar() {
   };
 
   const handleClearFilter = () => {
-    const newParams = new URLSearchParams(window.location.search);
+    // Extract search params from location properly
+    const searchString = location.includes('?') ? location.split('?')[1] : '';
+    const newParams = new URLSearchParams(searchString);
     newParams.delete('marketplace');
     const newSearch = newParams.toString();
     navigate(newSearch ? `/?${newSearch}` : '/');
