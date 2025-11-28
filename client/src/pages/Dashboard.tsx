@@ -950,25 +950,25 @@ export default function Dashboard() {
           ))}
         </div>
       ) : (
-        <Card>
+        <Card className="overflow-hidden">
           <div className="divide-y">
             {paginatedReviews.map((review) => (
               <div
                 key={review.id}
-                className="flex items-center gap-4 p-4 hover-elevate cursor-pointer"
+                className="flex items-center gap-4 p-4 hover-elevate cursor-pointer overflow-hidden"
                 onClick={() => setSelectedReview(review)}
                 data-testid={`row-review-${review.id}`}
               >
-                <div className="flex-1 min-w-0">
+                <div className="flex-1 min-w-0 overflow-hidden">
                   <div className="flex items-center gap-2 mb-1">
-                    <span className="font-medium truncate">{review.title}</span>
+                    <span className="font-medium truncate max-w-[300px]">{review.title}</span>
                     <Badge variant="outline" className="text-xs shrink-0">
                       {review.marketplace}
                     </Badge>
                   </div>
-                  <p className="text-sm text-muted-foreground truncate">{review.content}</p>
+                  <p className="text-sm text-muted-foreground line-clamp-1">{review.content}</p>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-2 shrink-0">
                   <Badge 
                     variant={review.sentiment === "negative" ? "destructive" : review.sentiment === "positive" ? "default" : "secondary"}
                     className="capitalize text-xs"
@@ -981,7 +981,7 @@ export default function Dashboard() {
                   >
                     {review.severity}
                   </Badge>
-                  <span className="text-sm text-muted-foreground w-16 text-right">
+                  <span className="text-sm text-muted-foreground w-14 text-right">
                     {format(new Date(review.createdAt), "MMM d")}
                   </span>
                 </div>
