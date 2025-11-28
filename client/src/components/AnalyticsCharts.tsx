@@ -15,7 +15,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-const COLORS = ["hsl(var(--chart-1))", "hsl(var(--chart-2))", "hsl(var(--chart-3))", "hsl(var(--chart-4))", "hsl(var(--chart-5))"];
+const COLORS = ["#06b6d4", "#a855f7", "#f59e0b", "#ec4899", "#22c55e"];
 
 interface SentimentTrendChartProps {
   data: Record<string, { positive: number; neutral: number; negative: number }>;
@@ -31,47 +31,48 @@ export function SentimentTrendChart({ data }: SentimentTrendChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <Card data-testid="chart-sentiment-trend">
+      <Card data-testid="chart-sentiment-trend" className="bg-white/95 border-0">
         <CardHeader>
-          <CardTitle>Sentiment Trends</CardTitle>
+          <CardTitle className="text-slate-800">Sentiment Trends</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[300px]">
-          <p className="text-muted-foreground text-sm">No review data available for trends</p>
+          <p className="text-slate-500 text-sm">No review data available for trends</p>
         </CardContent>
       </Card>
     );
   }
 
   return (
-    <Card data-testid="chart-sentiment-trend">
+    <Card data-testid="chart-sentiment-trend" className="bg-white/95 border-0">
       <CardHeader>
-        <CardTitle>Sentiment Trends</CardTitle>
+        <CardTitle className="text-slate-800">Sentiment Trend</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
           <LineChart data={chartData} margin={{ bottom: 20 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
             <XAxis 
               dataKey="week" 
-              stroke="hsl(var(--muted-foreground))" 
-              tick={{ fontSize: 10 }}
+              stroke="#64748b" 
+              tick={{ fontSize: 10, fill: "#64748b" }}
               angle={-30}
               textAnchor="end"
               height={50}
             />
-            <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+            <YAxis stroke="#64748b" tick={{ fill: "#64748b" }} allowDecimals={false} />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: "hsl(var(--popover))", 
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "6px"
+                backgroundColor: "#ffffff", 
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
               }}
               formatter={(value: number) => [Math.round(value), '']}
             />
             <Legend />
-            <Line type="monotone" dataKey="positive" stroke="hsl(var(--chart-2))" strokeWidth={2} dot={{ r: 4 }} />
-            <Line type="monotone" dataKey="neutral" stroke="hsl(var(--chart-3))" strokeWidth={2} dot={{ r: 4 }} />
-            <Line type="monotone" dataKey="negative" stroke="hsl(var(--destructive))" strokeWidth={2} dot={{ r: 4 }} />
+            <Line type="monotone" dataKey="positive" stroke="#22c55e" strokeWidth={2} dot={{ r: 4, fill: "#22c55e" }} />
+            <Line type="monotone" dataKey="neutral" stroke="#f59e0b" strokeWidth={2} dot={{ r: 4, fill: "#f59e0b" }} />
+            <Line type="monotone" dataKey="negative" stroke="#ef4444" strokeWidth={2} dot={{ r: 4, fill: "#ef4444" }} />
           </LineChart>
         </ResponsiveContainer>
       </CardContent>
@@ -90,36 +91,43 @@ export function CategoryDistributionChart({ data }: CategoryDistributionChartPro
     count,
   })).sort((a, b) => b.count - a.count).slice(0, 8);
 
+  const total = chartData.reduce((sum, item) => sum + item.count, 0);
+
   return (
-    <Card data-testid="chart-category-distribution">
+    <Card data-testid="chart-category-distribution" className="bg-white/95 border-0">
       <CardHeader>
-        <CardTitle>Issue Categories</CardTitle>
+        <CardTitle className="text-slate-800">Category Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartData} margin={{ bottom: 60 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis 
-              dataKey="shortCategory" 
-              stroke="hsl(var(--muted-foreground))" 
-              tick={{ fontSize: 10 }}
-              angle={-45}
-              textAnchor="end"
-              height={60}
-              interval={0}
-            />
-            <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+          <PieChart>
+            <Pie
+              data={chartData}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              fill="#06b6d4"
+              dataKey="count"
+              label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
+            >
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: "hsl(var(--popover))", 
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "6px"
+                backgroundColor: "#ffffff", 
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
               }}
               formatter={(value: number) => [value, 'Count']}
-              labelFormatter={(label: string, payload: any[]) => payload?.[0]?.payload?.category || label}
             />
-            <Bar dataKey="count" fill="hsl(var(--chart-1))" />
-          </BarChart>
+            <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-2xl font-bold" fill="#1e293b">
+              {total}
+            </text>
+          </PieChart>
         </ResponsiveContainer>
       </CardContent>
     </Card>
@@ -134,9 +142,9 @@ export function MarketplaceDistributionChart({ data }: MarketplaceDistributionCh
   const chartData = Object.entries(data).map(([name, value]) => ({ name, value }));
 
   return (
-    <Card data-testid="chart-marketplace-distribution">
+    <Card data-testid="chart-marketplace-distribution" className="bg-white/95 border-0">
       <CardHeader>
-        <CardTitle>Reviews by Marketplace</CardTitle>
+        <CardTitle className="text-slate-800">Marketplace Breakdown</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -148,7 +156,7 @@ export function MarketplaceDistributionChart({ data }: MarketplaceDistributionCh
               labelLine={false}
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               outerRadius={80}
-              fill="hsl(var(--chart-1))"
+              fill="#06b6d4"
               dataKey="value"
             >
               {chartData.map((entry, index) => (
@@ -157,9 +165,10 @@ export function MarketplaceDistributionChart({ data }: MarketplaceDistributionCh
             </Pie>
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: "hsl(var(--popover))", 
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "6px"
+                backgroundColor: "#ffffff", 
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
               }} 
             />
           </PieChart>
@@ -175,30 +184,35 @@ interface RatingDistributionChartProps {
 
 export function RatingDistributionChart({ data }: RatingDistributionChartProps) {
   const chartData = [1, 2, 3, 4, 5].map(rating => ({
-    rating: `${rating} ★`,
+    rating: rating.toString(),
     count: Math.round(data[rating] || 0),
   }));
 
   return (
-    <Card data-testid="chart-rating-distribution">
+    <Card data-testid="chart-rating-distribution" className="bg-white/95 border-0">
       <CardHeader>
-        <CardTitle>Rating Distribution</CardTitle>
+        <CardTitle className="text-slate-800">Rating Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
           <BarChart data={chartData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
-            <XAxis dataKey="rating" stroke="hsl(var(--muted-foreground))" tick={{ fontSize: 12 }} />
-            <YAxis stroke="hsl(var(--muted-foreground))" allowDecimals={false} />
+            <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+            <XAxis dataKey="rating" stroke="#64748b" tick={{ fontSize: 12, fill: "#64748b" }} />
+            <YAxis stroke="#64748b" tick={{ fill: "#64748b" }} allowDecimals={false} />
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: "hsl(var(--popover))", 
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "6px"
+                backgroundColor: "#ffffff", 
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
               }}
               formatter={(value: number) => [Math.round(value), 'Reviews']}
             />
-            <Bar dataKey="count" fill="hsl(var(--chart-4))" />
+            <Bar dataKey="count" fill="url(#barGradient)" radius={[4, 4, 0, 0]}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={index < 2 ? "#f59e0b" : "#a855f7"} />
+              ))}
+            </Bar>
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
@@ -217,9 +231,9 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
   }));
 
   return (
-    <Card data-testid="chart-status-distribution">
+    <Card data-testid="chart-status-distribution" className="bg-white/95 border-0">
       <CardHeader>
-        <CardTitle>Review Status Distribution</CardTitle>
+        <CardTitle className="text-slate-800">Review Status Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -231,7 +245,7 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
               labelLine={false}
               label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
               outerRadius={80}
-              fill="hsl(var(--chart-1))"
+              fill="#06b6d4"
               dataKey="value"
             >
               {chartData.map((entry, index) => (
@@ -240,9 +254,10 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
             </Pie>
             <Tooltip 
               contentStyle={{ 
-                backgroundColor: "hsl(var(--popover))", 
-                border: "1px solid hsl(var(--border))",
-                borderRadius: "6px"
+                backgroundColor: "#ffffff", 
+                border: "1px solid #e2e8f0",
+                borderRadius: "8px",
+                boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)"
               }} 
             />
           </PieChart>
