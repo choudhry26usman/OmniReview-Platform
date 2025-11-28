@@ -8,7 +8,7 @@ import {
   Star, 
   TrendingUp
 } from "lucide-react";
-import driftSignalLogo from "@assets/generated_images/clean_wave_logo_no_background.png";
+import driftSignalLogo from "@assets/generated_images/neon_wave_lines_logo_dark_bg.png";
 
 export default function Landing() {
   const handleLogin = () => {
