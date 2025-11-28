@@ -196,7 +196,7 @@ export default function Analytics() {
             <CollapsibleTrigger asChild>
               <Button 
                 size="sm" 
-                className="bg-primary/20 border border-primary/30 text-foreground rounded-full px-4"
+                className="bg-primary text-primary-foreground rounded-full px-4"
                 data-testid="button-toggle-filters"
               >
                 Sentiment
