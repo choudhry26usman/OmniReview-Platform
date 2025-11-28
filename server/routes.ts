@@ -114,7 +114,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Fetch emails from Outlook and auto-import reviews
-  app.get("/api/emails", async (req, res) => {
+  app.get("/api/emails", isAuthenticated, async (req: any, res) => {
     try {
       const outlookClient = await getUncachableOutlookClient();
       
@@ -349,7 +349,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Send email via Outlook
-  app.post("/api/send-email", async (req, res) => {
+  app.post("/api/send-email", isAuthenticated, async (req: any, res) => {
     try {
       const { to, subject, body } = req.body;
       
@@ -386,7 +386,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Analyze review with AI
-  app.post("/api/analyze-review", async (req, res) => {
+  app.post("/api/analyze-review", isAuthenticated, async (req: any, res) => {
     try {
       const { reviewContent, customerName, marketplace } = req.body;
 
@@ -408,7 +408,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Generate AI reply
-  app.post("/api/generate-reply", async (req, res) => {
+  app.post("/api/generate-reply", isAuthenticated, async (req: any, res) => {
     try {
       const { reviewContent, customerName, marketplace, sentiment, severity } = req.body;
 
@@ -432,7 +432,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Test Axesso by fetching real Amazon product reviews
-  app.post("/api/test-axesso", async (req, res) => {
+  app.post("/api/test-axesso", isAuthenticated, async (req: any, res) => {
     try {
       const { getProductReviews, searchProducts } = await import("./integrations/axesso");
       const { amazonUrl, action } = req.body;
@@ -813,7 +813,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Fetch Amazon reviews by ASIN (preview only, no import)
-  app.post("/api/amazon/reviews", async (req, res) => {
+  app.post("/api/amazon/reviews", isAuthenticated, async (req: any, res) => {
     try {
       const { asin } = req.body;
       
@@ -852,7 +852,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Update review status (for workflow management)
-  app.patch("/api/reviews/:reviewId/status", async (req, res) => {
+  app.patch("/api/reviews/:reviewId/status", isAuthenticated, async (req: any, res) => {
     try {
       const { reviewId } = req.params;
       const { status } = req.body;
@@ -861,6 +861,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ 
           error: "Invalid status. Must be one of: open, in_progress, resolved" 
         });
+      }
+
+      // Verify the review exists before updating
+      const review = await storage.getReviewById(reviewId);
+      if (!review) {
+        return res.status(404).json({ error: "Review not found" });
       }
 
       await storage.updateReviewStatus(reviewId, status);
@@ -1391,7 +1397,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import Shopify reviews - fetch from Shopify and process through AI
-  app.post("/api/shopify/import-reviews", async (req, res) => {
+  app.post("/api/shopify/import-reviews", isAuthenticated, async (req: any, res) => {
     try {
       let { productId } = req.body;
       
@@ -1531,7 +1537,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Import Walmart reviews - fetch from Walmart and process through AI
-  app.post("/api/walmart/import-reviews", async (req, res) => {
+  app.post("/api/walmart/import-reviews", isAuthenticated, async (req: any, res) => {
     try {
       let { productUrl } = req.body;
       
@@ -1700,7 +1706,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   // Trigger Outlook reconnection
-  app.post("/api/integrations/outlook/reconnect", async (req, res) => {
+  app.post("/api/integrations/outlook/reconnect", isAuthenticated, async (req: any, res) => {
     try {
       res.json({ 
         success: true, 
