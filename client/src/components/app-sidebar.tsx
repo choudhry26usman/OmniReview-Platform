@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import driftSignalLogo from "@assets/Gemini_Generated_Image_20rbpd20rbpd20rb_1763885742664.png";
+import driftSignalLogo from "@assets/generated_images/driftsignal_wave_logo_icon.png";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
 import { AdvancedFiltersModal } from "@/components/AdvancedFiltersModal";
 import { useAuth } from "@/hooks/useAuth";
