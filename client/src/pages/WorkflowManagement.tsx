@@ -8,7 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
-import { Calendar, X, Download, ArrowUpDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Calendar, X, Download, ArrowUpDown, Search } from "lucide-react";
 import { 
   Select, 
   SelectContent, 
@@ -30,6 +31,7 @@ type Severity = "low" | "medium" | "high" | "critical";
 export default function WorkflowManagement() {
   const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
     to: undefined,
@@ -43,6 +45,7 @@ export default function WorkflowManagement() {
   const { toast } = useToast();
 
   const handleClearFilters = () => {
+    setSearchQuery("");
     setDateRange({ from: undefined, to: undefined });
     setSelectedProduct("all");
     setSelectedMarketplaces([]);
@@ -84,6 +87,7 @@ export default function WorkflowManagement() {
   };
 
   const activeFilterCount = 
+    (searchQuery ? 1 : 0) +
     (dateRange.from || dateRange.to ? 1 : 0) +
     (selectedProduct && selectedProduct !== 'all' ? 1 : 0) +
     selectedMarketplaces.length +
@@ -97,6 +101,23 @@ export default function WorkflowManagement() {
   });
 
   const products = productsData?.products || [];
+  
+  // Create a lookup map for product names
+  const productNameMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    products.forEach((p: any) => {
+      const key = `${p.platform}|${p.productId}`;
+      map[key] = p.productName;
+    });
+    return map;
+  }, [products]);
+  
+  // Helper to get product name from productId and marketplace
+  const getProductName = (marketplace: string, productId: string | null) => {
+    if (!productId) return 'Unknown Product';
+    const key = `${marketplace}|${productId}`;
+    return productNameMap[key] || productId;
+  };
 
   // Fetch all imported reviews
   const { data: importedReviewsData } = useQuery<{ reviews: Review[]; total: number }>({
@@ -105,6 +126,21 @@ export default function WorkflowManagement() {
 
   const allReviews = useMemo(() => {
     let reviews = importedReviewsData?.reviews || [];
+    
+    // Filter by search query (customer name, product name, title, marketplace)
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      reviews = reviews.filter(r => {
+        const productName = getProductName(r.marketplace, r.productId);
+        return (
+          (r.customerName ?? "").toLowerCase().includes(query) ||
+          (productName ?? "").toLowerCase().includes(query) ||
+          (r.title ?? "").toLowerCase().includes(query) ||
+          (r.marketplace ?? "").toLowerCase().includes(query) ||
+          (r.category ?? "").toLowerCase().includes(query)
+        );
+      });
+    }
     
     // Filter by selected product using pipe delimiter
     if (selectedProduct && selectedProduct !== "all") {
@@ -162,12 +198,14 @@ export default function WorkflowManagement() {
     });
     
     return reviews;
-  }, [importedReviewsData, selectedProduct, selectedMarketplaces, selectedSentiments, selectedSeverities, selectedRatings, dateRange, sortBy]);
+  }, [importedReviewsData, searchQuery, selectedProduct, selectedMarketplaces, selectedSentiments, selectedSeverities, selectedRatings, dateRange, sortBy, productNameMap]);
 
   // Helper to map Review to WorkflowReview
   const mapToWorkflowReview = (r: Review) => ({
     id: r.id,
     marketplace: r.marketplace as "Amazon" | "Shopify" | "Walmart" | "Mailbox",
+    productId: r.productId,
+    productName: getProductName(r.marketplace, r.productId),
     title: r.title,
     severity: r.severity,
     category: r.category,
@@ -302,6 +340,17 @@ export default function WorkflowManagement() {
         </div>
         
         <div className="flex items-center gap-3 flex-wrap">
+          <div className="relative w-64">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search customer, product, title..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 h-9"
+              data-testid="input-search-workflow"
+            />
+          </div>
+          
           <Select value={sortBy} onValueChange={(v) => setSortBy(v as typeof sortBy)}>
             <SelectTrigger className="w-[160px]" data-testid="select-sort-workflow">
               <ArrowUpDown className="h-4 w-4 mr-2" />
