@@ -31,9 +31,9 @@ export function SentimentTrendChart({ data }: SentimentTrendChartProps) {
 
   if (chartData.length === 0) {
     return (
-      <Card data-testid="chart-sentiment-trend" className="bg-slate-800/90 border border-slate-700/50 rounded-2xl">
+      <Card data-testid="chart-sentiment-trend" className="rounded-2xl">
         <CardHeader>
-          <CardTitle className="text-slate-100">Sentiment Trend</CardTitle>
+          <CardTitle>Sentiment Trend</CardTitle>
         </CardHeader>
         <CardContent className="flex items-center justify-center h-[300px]">
           <p className="text-slate-400 text-sm">No review data available for trends</p>
@@ -43,9 +43,9 @@ export function SentimentTrendChart({ data }: SentimentTrendChartProps) {
   }
 
   return (
-    <Card data-testid="chart-sentiment-trend" className="bg-slate-800/90 border border-slate-700/50 rounded-2xl">
+    <Card data-testid="chart-sentiment-trend" className="rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-slate-100">Sentiment Trend</CardTitle>
+        <CardTitle>Sentiment Trend</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -94,9 +94,9 @@ export function CategoryDistributionChart({ data }: CategoryDistributionChartPro
   const total = chartData.reduce((sum, item) => sum + item.count, 0);
 
   return (
-    <Card data-testid="chart-category-distribution" className="bg-slate-800/90 border border-slate-700/50 rounded-2xl">
+    <Card data-testid="chart-category-distribution" className="rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-slate-100">Category Distribution</CardTitle>
+        <CardTitle>Category Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -142,9 +142,9 @@ export function MarketplaceDistributionChart({ data }: MarketplaceDistributionCh
   const chartData = Object.entries(data).map(([name, value]) => ({ name, value }));
 
   return (
-    <Card data-testid="chart-marketplace-distribution" className="bg-slate-800/90 border border-slate-700/50 rounded-2xl">
+    <Card data-testid="chart-marketplace-distribution" className="rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-slate-100">Marketplace Breakdown</CardTitle>
+        <CardTitle>Marketplace Breakdown</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -189,9 +189,9 @@ export function RatingDistributionChart({ data }: RatingDistributionChartProps) 
   }));
 
   return (
-    <Card data-testid="chart-rating-distribution" className="bg-slate-800/90 border border-slate-700/50 rounded-2xl">
+    <Card data-testid="chart-rating-distribution" className="rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-slate-100">Rating Distribution</CardTitle>
+        <CardTitle>Rating Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
@@ -231,9 +231,9 @@ export function StatusDistributionChart({ data }: StatusDistributionChartProps) 
   }));
 
   return (
-    <Card data-testid="chart-status-distribution" className="bg-slate-800/90 border border-slate-700/50 rounded-2xl">
+    <Card data-testid="chart-status-distribution" className="rounded-2xl">
       <CardHeader>
-        <CardTitle className="text-slate-100">Review Status Distribution</CardTitle>
+        <CardTitle>Review Status Distribution</CardTitle>
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={300}>
