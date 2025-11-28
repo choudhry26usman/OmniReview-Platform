@@ -225,24 +225,18 @@ export default function Dashboard() {
     });
   };
 
-  const handleProductClick = (productId: string) => {
-    const currentParams = new URLSearchParams(searchString);
-    
-    if (productFilter === productId) {
-      currentParams.delete('productId');
-    } else {
-      currentParams.set('productId', productId);
-    }
-    
-    const newSearch = currentParams.toString();
-    navigate(newSearch ? `/?${newSearch}` : '/');
+  const isProductSelected = (platform: string, productId: string): boolean => {
+    if (!selectedProduct || selectedProduct === "all") return false;
+    return selectedProduct === `${platform}|${productId}`;
   };
 
-  const clearProductFilter = () => {
-    const currentParams = new URLSearchParams(searchString);
-    currentParams.delete('productId');
-    const newSearch = currentParams.toString();
-    navigate(newSearch ? `/?${newSearch}` : '/');
+  const handleProductCardClick = (platform: string, productId: string) => {
+    const newValue = `${platform}|${productId}`;
+    if (selectedProduct === newValue) {
+      setSelectedProduct("all");
+    } else {
+      setSelectedProduct(newValue);
+    }
   };
 
   const allReviews = useMemo(() => {
@@ -458,11 +452,11 @@ export default function Dashboard() {
                 <Card 
                   key={product.id} 
                   className={`hover-elevate cursor-pointer transition-all ${
-                    productFilter === product.productId 
+                    isProductSelected(product.platform, product.productId) 
                       ? 'ring-2 ring-primary bg-primary/5' 
                       : ''
                   }`}
-                  onClick={() => handleProductClick(product.productId)}
+                  onClick={() => handleProductCardClick(product.platform, product.productId)}
                   data-testid={`card-product-${product.productId}`}
                 >
                   <CardContent className="p-4">
@@ -481,7 +475,7 @@ export default function Dashboard() {
                           <span className="text-xs text-muted-foreground font-mono">
                             {product.productId.length > 20 ? `${product.productId.slice(0, 20)}...` : product.productId}
                           </span>
-                          {productFilter === product.productId && (
+                          {isProductSelected(product.platform, product.productId) && (
                             <Badge variant="default" className="text-xs">Filtered</Badge>
                           )}
                         </div>
