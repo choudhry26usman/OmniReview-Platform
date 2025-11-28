@@ -1814,6 +1814,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     res.json(status);
   });
 
+  // Chatbot assistant endpoint (authenticated to prevent abuse)
+  app.post("/api/chatbot/ask", isAuthenticated, async (req: any, res) => {
+    try {
+      const { question } = req.body;
+      
+      if (!question || typeof question !== 'string') {
+        return res.status(400).json({ error: "Question is required" });
+      }
+
+      const apiKey = process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: "AI service not configured" });
+      }
+
+      const systemPrompt = `You are DriftSignal Assistant, a helpful AI assistant for the DriftSignal platform - a marketplace review and complaint management system. Your role is to help users understand and use the platform effectively.
+
+Key features of DriftSignal:
+1. **Dashboard**: Central hub showing all reviews across marketplaces with filtering options
+2. **Workflow Management**: Kanban-style board to track review status (Open, In Progress, Resolved)
+3. **Analytics**: Charts and metrics for review trends, sentiment distribution, rating analysis
+4. **Marketplace Integration**: Import reviews from Amazon, Walmart, Shopify, and email (Outlook)
+5. **AI-Powered Analysis**: Automatic sentiment detection (positive/neutral/negative), severity assessment, and category classification
+6. **AI Reply Generation**: Generates professional response suggestions for customer reviews
+7. **Email Integration**: Connect Outlook to import customer feedback emails as reviews
+8. **Product Tracking**: Track imported products and their review counts
+
+How to import reviews:
+- Click "Import Reviews" button on the Dashboard
+- Select a marketplace (Amazon, Walmart, Shopify, or Mailbox)
+- For Amazon/Walmart: Enter the product URL
+- For Shopify: Enter the product ID
+- For Mailbox: Sync emails from connected Outlook account
+- Reviews are automatically analyzed for sentiment and severity
+
+Workflow Board statuses:
+- Open: New reviews that need attention
+- In Progress: Reviews currently being handled
+- Resolved: Reviews that have been addressed
+
+Be concise, friendly, and helpful. Focus on answering questions about using DriftSignal. If asked about topics outside the platform, politely redirect to DriftSignal-related help.`;
+
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": "https://replit.com",
+          "X-Title": "DriftSignal Assistant",
+        },
+        body: JSON.stringify({
+          model: "x-ai/grok-3-fast",
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: question }
+          ],
+          max_tokens: 500,
+          temperature: 0.7,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        console.error("OpenRouter API error:", errorData);
+        throw new Error("Failed to get AI response");
+      }
+
+      const data = await response.json();
+      const answer = data.choices?.[0]?.message?.content || "I'm sorry, I couldn't generate a response. Please try again.";
+
+      res.json({ answer });
+    } catch (error: any) {
+      console.error("Chatbot error:", error);
+      res.status(500).json({ 
+        error: error.message || "Failed to process your question" 
+      });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

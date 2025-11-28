@@ -8,6 +8,7 @@ import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { AppSidebar } from "@/components/app-sidebar";
 import { TourProvider } from "@/components/TourProvider";
+import { ChatbotAssistant } from "@/components/ChatbotAssistant";
 import { useTour } from "@/hooks/use-tour";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -80,6 +81,7 @@ function MainLayout() {
           </main>
         </div>
       </div>
+      <ChatbotAssistant />
     </SidebarProvider>
   );
 }
