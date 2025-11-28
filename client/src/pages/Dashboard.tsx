@@ -6,7 +6,7 @@ import { ReviewCard } from "@/components/ReviewCard";
 import { ReviewDetailModal } from "@/components/ReviewDetailModal";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
 import { ImportProductModal } from "@/components/ImportProductModal";
-import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Package, ShoppingCart, ExternalLink, Trash2 } from "lucide-react";
+import { MessageSquare, TrendingUp, Clock, CheckCircle, Search, Upload, Download, Mail, RefreshCw, Loader2, Package, ShoppingCart, ExternalLink, Trash2, Calendar, X } from "lucide-react";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -25,6 +25,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { SiAmazon, SiShopify, SiWalmart } from "react-icons/si";
 import { apiRequest, queryClient } from "@/lib/queryClient";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { Label } from "@/components/ui/label";
+import { format } from "date-fns";
+
+type Marketplace = "Amazon" | "Shopify" | "Walmart" | "Mailbox";
+type Sentiment = "positive" | "neutral" | "negative";
+type Status = "open" | "in_progress" | "resolved";
 
 // Mock reviews removed - now using only real imported reviews from Amazon/other sources
 const mockReviews: any[] = [];
@@ -37,7 +46,66 @@ export default function Dashboard() {
   const [isImportProductModalOpen, setIsImportProductModalOpen] = useState(false);
   const [refreshingProductId, setRefreshingProductId] = useState<string | null>(null);
   const [deletingProduct, setDeletingProduct] = useState<{ productId: string; platform: string; productName: string } | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
+    from: undefined,
+    to: undefined,
+  });
+  const [selectedProduct, setSelectedProduct] = useState<string>("all");
+  const [selectedMarketplaces, setSelectedMarketplaces] = useState<Marketplace[]>([]);
+  const [selectedSentiments, setSelectedSentiments] = useState<Sentiment[]>([]);
+  const [selectedStatuses, setSelectedStatuses] = useState<Status[]>([]);
+  const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const { toast } = useToast();
+
+  const handleClearFilters = () => {
+    setDateRange({ from: undefined, to: undefined });
+    setSelectedProduct("all");
+    setSelectedMarketplaces([]);
+    setSelectedSentiments([]);
+    setSelectedStatuses([]);
+    setSelectedRatings([]);
+  };
+
+  const toggleMarketplace = (marketplace: Marketplace) => {
+    setSelectedMarketplaces(prev =>
+      prev.includes(marketplace)
+        ? prev.filter(m => m !== marketplace)
+        : [...prev, marketplace]
+    );
+  };
+
+  const toggleSentiment = (sentiment: Sentiment) => {
+    setSelectedSentiments(prev =>
+      prev.includes(sentiment)
+        ? prev.filter(s => s !== sentiment)
+        : [...prev, sentiment]
+    );
+  };
+
+  const toggleStatus = (status: Status) => {
+    setSelectedStatuses(prev =>
+      prev.includes(status)
+        ? prev.filter(s => s !== status)
+        : [...prev, status]
+    );
+  };
+
+  const toggleRating = (rating: number) => {
+    setSelectedRatings(prev =>
+      prev.includes(rating)
+        ? prev.filter(r => r !== rating)
+        : [...prev, rating]
+    );
+  };
+
+  const activeFilterCount = 
+    (dateRange.from || dateRange.to ? 1 : 0) +
+    (selectedProduct && selectedProduct !== 'all' ? 1 : 0) +
+    selectedMarketplaces.length +
+    selectedSentiments.length +
+    selectedStatuses.length +
+    selectedRatings.length;
   
   const marketplaceFilter = useMemo(() => {
     const searchParams = new URLSearchParams(searchString);
@@ -342,7 +410,31 @@ export default function Dashboard() {
             Centralized marketplace review and complaint management
           </p>
         </div>
-        <div className="flex gap-2 flex-wrap">
+        <div className="flex gap-2 flex-wrap items-center">
+          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <CollapsibleTrigger asChild>
+              <Button 
+                size="sm" 
+                className="bg-primary/20 border border-primary/30 text-foreground rounded-full px-4 text-sm"
+                data-testid="button-toggle-filters-dashboard"
+              >
+                Filter
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
+              </Button>
+            </CollapsibleTrigger>
+          </Collapsible>
+          
+          {activeFilterCount > 0 && (
+            <Button variant="ghost" size="sm" onClick={handleClearFilters} data-testid="button-clear-all-filters-dashboard">
+              <X className="h-4 w-4 mr-2" />
+              Clear
+            </Button>
+          )}
+          
           <Button 
             variant="default" 
             onClick={handleSyncEmails}
@@ -378,6 +470,123 @@ export default function Dashboard() {
           </Button>
         </div>
       </div>
+
+      <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+        <CollapsibleContent>
+          <Card className="mb-6">
+            <CardContent className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-sm">Date Range</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" size="sm" className="w-full justify-start text-sm" data-testid="button-date-range-filter-dashboard">
+                        <Calendar className="h-4 w-4 mr-2" />
+                        {dateRange.from && dateRange.to
+                          ? `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d, yyyy')}`
+                          : 'Select date range'}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="range"
+                        selected={{ from: dateRange.from, to: dateRange.to }}
+                        onSelect={(range) => setDateRange({ from: range?.from, to: range?.to })}
+                        numberOfMonths={2}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Product</Label>
+                  <Select value={selectedProduct} onValueChange={setSelectedProduct}>
+                    <SelectTrigger className="text-sm" data-testid="select-product-filter-dashboard">
+                      <SelectValue placeholder="All products" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All products</SelectItem>
+                      {productsData?.products.map((product: any) => (
+                        <SelectItem key={`${product.platform}-${product.productId}`} value={`${product.platform}-${product.productId}`}>
+                          {product.productName} ({product.platform})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Marketplace</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(['Amazon', 'Shopify', 'Walmart', 'Mailbox'] as Marketplace[]).map(marketplace => (
+                      <Badge
+                        key={marketplace}
+                        variant={selectedMarketplaces.includes(marketplace) ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate text-sm"
+                        onClick={() => toggleMarketplace(marketplace)}
+                        data-testid={`filter-marketplace-${marketplace.toLowerCase()}-dashboard`}
+                      >
+                        {marketplace}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Sentiment</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(['positive', 'neutral', 'negative'] as Sentiment[]).map(sentiment => (
+                      <Badge
+                        key={sentiment}
+                        variant={selectedSentiments.includes(sentiment) ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate capitalize text-sm"
+                        onClick={() => toggleSentiment(sentiment)}
+                        data-testid={`filter-sentiment-${sentiment}-dashboard`}
+                      >
+                        {sentiment}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Status</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(['open', 'in_progress', 'resolved'] as Status[]).map(status => (
+                      <Badge
+                        key={status}
+                        variant={selectedStatuses.includes(status) ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate capitalize text-sm"
+                        onClick={() => toggleStatus(status)}
+                        data-testid={`filter-status-${status}-dashboard`}
+                      >
+                        {status.replace('_', ' ')}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Rating</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {[1, 2, 3, 4, 5].map(rating => (
+                      <Badge
+                        key={rating}
+                        variant={selectedRatings.includes(rating) ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate text-sm"
+                        onClick={() => toggleRating(rating)}
+                        data-testid={`filter-rating-${rating}-dashboard`}
+                      >
+                        {rating} ★
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </CollapsibleContent>
+      </Collapsible>
 
       {productsData && productsData.products.length > 0 && (
         <Card data-testid="card-tracked-products">
