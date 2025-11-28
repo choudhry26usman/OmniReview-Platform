@@ -104,9 +104,9 @@ export default function WorkflowManagement() {
   const allReviews = useMemo(() => {
     let reviews = importedReviewsData?.reviews || [];
     
-    // Filter by selected product
+    // Filter by selected product using pipe delimiter
     if (selectedProduct && selectedProduct !== "all") {
-      const [platform, productId] = selectedProduct.split('-');
+      const [platform, productId] = selectedProduct.split('|');
       reviews = reviews.filter(r => r.marketplace === platform && r.productId === productId);
     }
     
@@ -309,7 +309,7 @@ export default function WorkflowManagement() {
                     <SelectContent>
                       <SelectItem value="all">All products</SelectItem>
                       {products.map((product: any) => (
-                        <SelectItem key={`${product.platform}-${product.productId}`} value={`${product.platform}-${product.productId}`}>
+                        <SelectItem key={`${product.platform}|${product.productId}`} value={`${product.platform}|${product.productId}`}>
                           {product.productName} ({product.platform})
                         </SelectItem>
                       ))}

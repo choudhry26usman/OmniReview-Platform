@@ -119,36 +119,6 @@ export default function Dashboard() {
     selectedSeverities.length +
     selectedRatings.length;
   
-  const marketplaceFilter = useMemo(() => {
-    const searchParams = new URLSearchParams(searchString);
-    return searchParams.get('marketplace') || "all";
-  }, [searchString]);
-  
-  const sentimentFilter = useMemo(() => {
-    const searchParams = new URLSearchParams(searchString);
-    return searchParams.get('sentiment') || "all";
-  }, [searchString]);
-  
-  const severityFilter = useMemo(() => {
-    const searchParams = new URLSearchParams(searchString);
-    return searchParams.get('severity') || "all";
-  }, [searchString]);
-  
-  const statusFilter = useMemo(() => {
-    const searchParams = new URLSearchParams(searchString);
-    return searchParams.get('status') || "all";
-  }, [searchString]);
-  
-  const dateFilter = useMemo(() => {
-    const searchParams = new URLSearchParams(searchString);
-    return searchParams.get('date') || "all";
-  }, [searchString]);
-  
-  const productFilter = useMemo(() => {
-    const searchParams = new URLSearchParams(searchString);
-    return searchParams.get('productId') || "all";
-  }, [searchString]);
-  
   const [, navigate] = useLocation();
 
 
@@ -409,19 +379,16 @@ export default function Dashboard() {
         }
       }
       
-      // Product filter
+      // Product filter using pipe delimiter
       let matchesProduct = true;
       if (selectedProduct && selectedProduct !== "all") {
-        const [platform, ...productIdParts] = selectedProduct.split('-');
-        const productId = productIdParts.join('-');
+        const [platform, productId] = selectedProduct.split('|');
         matchesProduct = review.marketplace === platform && review.productId === productId;
-      } else if (productFilter !== "all") {
-        matchesProduct = review.productId === productFilter;
       }
       
       return matchesSearch && matchesSentiment && matchesSeverity && matchesStatus && matchesDate && matchesMarketplace && matchesProduct && matchesRating;
     });
-  }, [allReviews, searchQuery, selectedSentiments, selectedSeverities, selectedStatuses, selectedMarketplaces, selectedRatings, dateRange, selectedProduct, productFilter]);
+  }, [allReviews, searchQuery, selectedSentiments, selectedSeverities, selectedStatuses, selectedMarketplaces, selectedRatings, dateRange, selectedProduct]);
 
   return (
     <div className="p-6 space-y-6">
@@ -700,7 +667,7 @@ export default function Dashboard() {
                       <SelectContent>
                         <SelectItem value="all">All products</SelectItem>
                         {productsData?.products.map((product: any) => (
-                          <SelectItem key={`${product.platform}-${product.productId}`} value={`${product.platform}-${product.productId}`}>
+                          <SelectItem key={`${product.platform}|${product.productId}`} value={`${product.platform}|${product.productId}`}>
                             {product.productName} ({product.platform})
                           </SelectItem>
                         ))}

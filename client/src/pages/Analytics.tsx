@@ -29,6 +29,7 @@ import { format } from "date-fns";
 type Marketplace = "Amazon" | "Shopify" | "Walmart" | "Mailbox";
 type Sentiment = "positive" | "neutral" | "negative";
 type Status = "open" | "in_progress" | "resolved";
+type Severity = "low" | "medium" | "high" | "critical";
 
 export default function Analytics() {
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
@@ -39,6 +40,7 @@ export default function Analytics() {
   const [selectedMarketplaces, setSelectedMarketplaces] = useState<Marketplace[]>([]);
   const [selectedSentiments, setSelectedSentiments] = useState<Sentiment[]>([]);
   const [selectedStatuses, setSelectedStatuses] = useState<Status[]>([]);
+  const [selectedSeverities, setSelectedSeverities] = useState<Severity[]>([]);
   const [selectedRatings, setSelectedRatings] = useState<number[]>([]);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -73,8 +75,11 @@ export default function Analytics() {
     if (selectedRatings.length > 0) {
       params.append('ratings', selectedRatings.join(','));
     }
+    if (selectedSeverities.length > 0) {
+      params.append('severities', selectedSeverities.join(','));
+    }
     return params.toString();
-  }, [dateRange, selectedProduct, selectedMarketplaces, selectedSentiments, selectedStatuses, selectedRatings]);
+  }, [dateRange, selectedProduct, selectedMarketplaces, selectedSentiments, selectedStatuses, selectedSeverities, selectedRatings]);
 
   // Fetch analytics data
   const { data: analyticsData, isLoading } = useQuery({
@@ -100,6 +105,7 @@ export default function Analytics() {
     setSelectedMarketplaces([]);
     setSelectedSentiments([]);
     setSelectedStatuses([]);
+    setSelectedSeverities([]);
     setSelectedRatings([]);
   };
 
@@ -135,12 +141,21 @@ export default function Analytics() {
     );
   };
 
+  const toggleSeverity = (severity: Severity) => {
+    setSelectedSeverities(prev =>
+      prev.includes(severity)
+        ? prev.filter(s => s !== severity)
+        : [...prev, severity]
+    );
+  };
+
   const activeFilterCount = 
     (dateRange.from || dateRange.to ? 1 : 0) +
     (selectedProduct && selectedProduct !== 'all' ? 1 : 0) +
     selectedMarketplaces.length +
     selectedSentiments.length +
     selectedStatuses.length +
+    selectedSeverities.length +
     selectedRatings.length;
 
   return (
@@ -216,7 +231,7 @@ export default function Analytics() {
                     <SelectContent>
                       <SelectItem value="all">All products</SelectItem>
                       {products.map((product: any) => (
-                        <SelectItem key={`${product.platform}-${product.productId}`} value={`${product.platform}-${product.productId}`}>
+                        <SelectItem key={`${product.platform}|${product.productId}`} value={`${product.platform}|${product.productId}`}>
                           {product.productName} ({product.platform})
                         </SelectItem>
                       ))}
@@ -270,6 +285,23 @@ export default function Analytics() {
                         data-testid={`filter-status-${status}`}
                       >
                         {status.replace('_', ' ')}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm">Severity</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {(['low', 'medium', 'high', 'critical'] as Severity[]).map(severity => (
+                      <Badge
+                        key={severity}
+                        variant={selectedSeverities.includes(severity) ? "default" : "outline"}
+                        className="cursor-pointer hover-elevate capitalize text-sm"
+                        onClick={() => toggleSeverity(severity)}
+                        data-testid={`filter-severity-${severity}`}
+                      >
+                        {severity}
                       </Badge>
                     ))}
                   </div>
