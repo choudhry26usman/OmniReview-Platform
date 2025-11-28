@@ -186,10 +186,10 @@ export default function Analytics() {
             <CardContent className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div className="space-y-2">
-                  <Label>Date Range</Label>
+                  <Label className="text-sm">Date Range</Label>
                   <Popover>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" size="sm" className="w-full justify-start" data-testid="button-date-range-filter">
+                      <Button variant="outline" size="sm" className="w-full justify-start text-sm" data-testid="button-date-range-filter">
                         <Calendar className="h-4 w-4 mr-2" />
                         {dateRange.from && dateRange.to
                           ? `${format(dateRange.from, 'MMM d')} - ${format(dateRange.to, 'MMM d, yyyy')}`
@@ -208,9 +208,9 @@ export default function Analytics() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Product</Label>
+                  <Label className="text-sm">Product</Label>
                   <Select value={selectedProduct} onValueChange={setSelectedProduct}>
-                    <SelectTrigger data-testid="select-product-filter">
+                    <SelectTrigger className="text-sm" data-testid="select-product-filter">
                       <SelectValue placeholder="All products" />
                     </SelectTrigger>
                     <SelectContent>
@@ -225,13 +225,13 @@ export default function Analytics() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Marketplace</Label>
+                  <Label className="text-sm">Marketplace</Label>
                   <div className="flex flex-wrap gap-2">
                     {(['Amazon', 'Shopify', 'Walmart', 'Mailbox'] as Marketplace[]).map(marketplace => (
                       <Badge
                         key={marketplace}
                         variant={selectedMarketplaces.includes(marketplace) ? "default" : "outline"}
-                        className="cursor-pointer hover-elevate"
+                        className="cursor-pointer hover-elevate text-sm"
                         onClick={() => toggleMarketplace(marketplace)}
                         data-testid={`filter-marketplace-${marketplace.toLowerCase()}`}
                       >
@@ -242,13 +242,13 @@ export default function Analytics() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Sentiment</Label>
+                  <Label className="text-sm">Sentiment</Label>
                   <div className="flex flex-wrap gap-2">
                     {(['positive', 'neutral', 'negative'] as Sentiment[]).map(sentiment => (
                       <Badge
                         key={sentiment}
                         variant={selectedSentiments.includes(sentiment) ? "default" : "outline"}
-                        className="cursor-pointer hover-elevate capitalize"
+                        className="cursor-pointer hover-elevate capitalize text-sm"
                         onClick={() => toggleSentiment(sentiment)}
                         data-testid={`filter-sentiment-${sentiment}`}
                       >
@@ -259,13 +259,13 @@ export default function Analytics() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Status</Label>
+                  <Label className="text-sm">Status</Label>
                   <div className="flex flex-wrap gap-2">
                     {(['open', 'in_progress', 'resolved'] as Status[]).map(status => (
                       <Badge
                         key={status}
                         variant={selectedStatuses.includes(status) ? "default" : "outline"}
-                        className="cursor-pointer hover-elevate capitalize"
+                        className="cursor-pointer hover-elevate capitalize text-sm"
                         onClick={() => toggleStatus(status)}
                         data-testid={`filter-status-${status}`}
                       >
@@ -276,13 +276,13 @@ export default function Analytics() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Rating</Label>
+                  <Label className="text-sm">Rating</Label>
                   <div className="flex flex-wrap gap-2">
                     {[1, 2, 3, 4, 5].map(rating => (
                       <Badge
                         key={rating}
                         variant={selectedRatings.includes(rating) ? "default" : "outline"}
-                        className="cursor-pointer hover-elevate"
+                        className="cursor-pointer hover-elevate text-sm"
                         onClick={() => toggleRating(rating)}
                         data-testid={`filter-rating-${rating}`}
                       >
