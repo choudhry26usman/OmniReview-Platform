@@ -24,7 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import driftSignalLogo from "@assets/generated_images/driftsignal_wave_logo_icon.png";
+import driftSignalLogo from "@assets/generated_images/clean_wave_logo_no_background.png";
 import { ImportReviewsModal } from "@/components/ImportReviewsModal";
 import { AdvancedFiltersModal } from "@/components/AdvancedFiltersModal";
 import { useAuth } from "@/hooks/useAuth";
