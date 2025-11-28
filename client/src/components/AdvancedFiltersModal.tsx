@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { X } from "lucide-react";
 import { useLocation } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 
 interface AdvancedFiltersModalProps {
   open: boolean;
@@ -24,6 +25,21 @@ export function AdvancedFiltersModal({ open, onOpenChange }: AdvancedFiltersModa
   const severity = searchParams.get('severity') || 'all';
   const status = searchParams.get('status') || 'all';
   const dateRange = searchParams.get('date') || 'all';
+  const productId = searchParams.get('productId') || 'all';
+
+  const { data: productsData } = useQuery<{ 
+    products: Array<{
+      id: string;
+      platform: string;
+      productId: string;
+      productName: string;
+      reviewCount: number;
+      lastImported: string;
+    }>; 
+    total: number 
+  }>({
+    queryKey: ["/api/products/tracked"],
+  });
 
   const updateFilter = (key: string, value: string) => {
     const params = new URLSearchParams(location.split('?')[1] || '');
@@ -41,7 +57,7 @@ export function AdvancedFiltersModal({ open, onOpenChange }: AdvancedFiltersModa
     onOpenChange(false);
   };
 
-  const hasActiveFilters = sentiment !== 'all' || severity !== 'all' || status !== 'all' || dateRange !== 'all';
+  const hasActiveFilters = sentiment !== 'all' || severity !== 'all' || status !== 'all' || dateRange !== 'all' || productId !== 'all';
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -117,6 +133,28 @@ export function AdvancedFiltersModal({ open, onOpenChange }: AdvancedFiltersModa
               </SelectContent>
             </Select>
           </div>
+
+          {productsData && productsData.products.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="product-filter">Product</Label>
+              <Select value={productId} onValueChange={(value) => updateFilter('productId', value)}>
+                <SelectTrigger id="product-filter" data-testid="select-product">
+                  <SelectValue placeholder="All products" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Products</SelectItem>
+                  {productsData.products.map((product) => (
+                    <SelectItem key={product.productId} value={product.productId}>
+                      <span className="flex items-center gap-2">
+                        <span className="text-xs text-muted-foreground">[{product.platform}]</span>
+                        <span className="truncate max-w-[250px]">{product.productName}</span>
+                      </span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          )}
         </div>
 
         <div className="flex justify-between gap-2">
