@@ -192,36 +192,22 @@ export default function Analytics() {
             </SelectContent>
           </Select>
           
-          <Popover>
-            <PopoverTrigger asChild>
+          <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
+            <CollapsibleTrigger asChild>
               <Button 
                 size="sm" 
                 className="bg-primary/20 border border-primary/30 text-foreground rounded-full px-4"
-                data-testid="button-sentiment-filter"
+                data-testid="button-toggle-filters"
               >
-                {selectedSentiments.length > 0 
-                  ? selectedSentiments.map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(', ')
-                  : 'Sentiment'}
+                Sentiment
+                {activeFilterCount > 0 && (
+                  <Badge variant="secondary" className="ml-2 h-5 px-1.5">
+                    {activeFilterCount}
+                  </Badge>
+                )}
               </Button>
-            </PopoverTrigger>
-            <PopoverContent className="w-48 p-2" align="end">
-              <div className="space-y-2">
-                {(['positive', 'neutral', 'negative'] as Sentiment[]).map(sentiment => (
-                  <div key={sentiment} className="flex items-center space-x-2">
-                    <Checkbox
-                      id={`sentiment-${sentiment}`}
-                      checked={selectedSentiments.includes(sentiment)}
-                      onCheckedChange={() => toggleSentiment(sentiment)}
-                      data-testid={`checkbox-sentiment-${sentiment}`}
-                    />
-                    <Label htmlFor={`sentiment-${sentiment}`} className="capitalize cursor-pointer">
-                      {sentiment}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
+            </CollapsibleTrigger>
+          </Collapsible>
           
           {activeFilterCount > 0 && (
             <Button variant="ghost" size="sm" onClick={handleClearFilters} data-testid="button-clear-all-filters">
