@@ -195,9 +195,8 @@ export default function Analytics() {
           <Collapsible open={filtersOpen} onOpenChange={setFiltersOpen}>
             <CollapsibleTrigger asChild>
               <Button 
-                variant="outline" 
                 size="sm" 
-                className="rounded-full px-4"
+                className="bg-primary/20 border border-primary/30 text-foreground rounded-full px-4"
                 data-testid="button-toggle-filters"
               >
                 Sentiment
