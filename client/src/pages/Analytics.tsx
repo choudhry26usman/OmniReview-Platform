@@ -199,7 +199,7 @@ export default function Analytics() {
                 className="bg-primary/20 border border-primary/30 text-foreground rounded-full px-4 text-sm"
                 data-testid="button-toggle-filters"
               >
-                Sentiment
+                Filter
                 {activeFilterCount > 0 && (
                   <Badge variant="secondary" className="ml-2 h-5 px-1.5">
                     {activeFilterCount}
