@@ -3,7 +3,7 @@ import { createServer, type Server } from "http";
 import { getUncachableOutlookClient } from "./integrations/outlook";
 import { testAxessoConnection } from "./integrations/axesso";
 import { testWalmartConnection } from "./integrations/walmart";
-import { analyzeReview, generateReply, classifyEmail } from "./ai/service";
+import { analyzeReview, generateReply, classifyEmail, extractProductFromEmail } from "./ai/service";
 import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { z } from "zod";
@@ -259,6 +259,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Analyze the review content
           const analysis = await analyzeReview(emailBody, senderName, 'Email');
           
+          // Extract product information from email
+          const productExtraction = await extractProductFromEmail(subject, emailBody);
+          console.log(`Product extraction: ${productExtraction.productName} (${productExtraction.productId}) - ${productExtraction.confidence}% confidence`);
+          
+          // Determine productId and productName
+          let productId = 'email-general';
+          let productName = 'General Email Inquiry';
+          
+          if (productExtraction.productId && productExtraction.confidence >= 50) {
+            productId = productExtraction.productId;
+            productName = productExtraction.productName || productExtraction.productId;
+            
+            // Check if this product already exists for this user
+            const existingProduct = await storage.getProductByIdentifier('Mailbox', productId, userId);
+            
+            if (!existingProduct) {
+              // Create new tracked product for email-extracted product
+              await storage.createProduct({
+                userId,
+                platform: 'Mailbox',
+                productId,
+                productName,
+              });
+              console.log(`📦 Created tracked product: ${productName} (${productId})`);
+            }
+          }
+          
           // Generate AI reply
           const aiReply = await generateReply(
             emailBody,
@@ -273,7 +300,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             userId,
             externalReviewId,
             marketplace: 'Mailbox',
-            productId: 'email-review',
+            productId,
             title: subject,
             content: emailBody.substring(0, 5000), // Limit content length
             customerName: senderName,
@@ -291,7 +318,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           
           importedReviews.push(newReview);
           imported++;
-          console.log(`✅ Imported review from ${senderName}: "${subject}"`);
+          console.log(`✅ Imported review from ${senderName}: "${subject}" → Product: ${productName}`);
         } else {
           skipped++;
         }

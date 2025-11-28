@@ -195,6 +195,13 @@ export interface EmailClassification {
   suggestedAction: "import" | "ignore";
 }
 
+export interface ProductExtraction {
+  productName: string | null;
+  productId: string | null;
+  confidence: number;
+  reasoning: string;
+}
+
 export async function classifyEmail(
   emailSubject: string,
   emailBody: string,
@@ -257,6 +264,72 @@ Is this a customer review or complaint that should be imported into our review m
       confidence: 0,
       reasoning: "Failed to classify email",
       suggestedAction: "ignore",
+    };
+  }
+}
+
+export async function extractProductFromEmail(
+  emailSubject: string,
+  emailBody: string
+): Promise<ProductExtraction> {
+  const systemPrompt = `You are an AI assistant that extracts product information from customer emails.
+
+Your task is to identify:
+1. The product name - Extract the specific product name mentioned in the email
+2. A short product ID - Create a unique, URL-safe identifier for tracking
+
+Guidelines:
+- Look for specific product names, model numbers, or descriptions
+- If multiple products are mentioned, pick the main one being discussed
+- The productId should be lowercase, hyphenated, max 30 characters (e.g., "blue-wireless-headphones", "kitchen-mixer-pro")
+- If no specific product is mentioned, try to infer a general category (e.g., "shipping-issue", "customer-service")
+- For order-related emails, use the product mentioned or "order-inquiry"
+
+Respond in JSON format with: productName (string or null), productId (string or null), confidence (0-100), reasoning (brief explanation).`;
+
+  const userPrompt = `Extract product information from this customer email:
+
+Subject: "${emailSubject}"
+Body: "${emailBody.substring(0, 1000)}"
+
+What product or service is this email about?`;
+
+  const response = await callOpenRouter({
+    model: "x-ai/grok-4.1-fast",
+    messages: [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userPrompt },
+    ],
+    temperature: 0.2,
+    max_tokens: 300,
+  });
+
+  try {
+    const jsonMatch = response.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      throw new Error("No JSON found in response");
+    }
+    
+    const parsed = JSON.parse(jsonMatch[0]);
+    
+    let productId = parsed.productId || null;
+    if (productId) {
+      productId = productId.toLowerCase().replace(/[^a-z0-9-]/g, '-').substring(0, 30);
+    }
+    
+    return {
+      productName: parsed.productName || null,
+      productId: productId,
+      confidence: parsed.confidence || 0,
+      reasoning: parsed.reasoning || "",
+    };
+  } catch (error) {
+    console.error("Failed to parse product extraction response:", error);
+    return {
+      productName: null,
+      productId: null,
+      confidence: 0,
+      reasoning: "Failed to extract product information",
     };
   }
 }
