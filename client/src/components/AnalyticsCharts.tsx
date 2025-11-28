@@ -108,36 +108,52 @@ export function CategoryDistributionChart({ data }: CategoryDistributionChartPro
         <CardTitle>Category Distribution</CardTitle>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <PieChart>
-            <Pie
-              data={chartData}
-              cx="50%"
-              cy="50%"
-              innerRadius={60}
-              outerRadius={100}
-              fill="#06b6d4"
-              dataKey="count"
-              label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
-            >
-              {chartData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip 
-              contentStyle={{ 
-                backgroundColor: "#1e293b", 
-                border: "1px solid #475569",
-                borderRadius: "8px",
-                color: "#f1f5f9"
-              }}
-              formatter={(value: number) => [value, 'Count']}
-            />
-            <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-2xl font-bold" fill="#f1f5f9">
-              {total}
-            </text>
-          </PieChart>
-        </ResponsiveContainer>
+        <div className="flex items-start gap-4">
+          <ResponsiveContainer width="55%" height={280}>
+            <PieChart>
+              <Pie
+                data={chartData}
+                cx="50%"
+                cy="50%"
+                innerRadius={50}
+                outerRadius={85}
+                fill="#06b6d4"
+                dataKey="count"
+                label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+              >
+                {chartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ 
+                  backgroundColor: "#1e293b", 
+                  border: "1px solid #475569",
+                  borderRadius: "8px",
+                  color: "#f1f5f9"
+                }}
+                formatter={(value: number, name: string, props: any) => [value, props.payload.category]}
+              />
+              <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-2xl font-bold" fill="#f1f5f9">
+                {total}
+              </text>
+            </PieChart>
+          </ResponsiveContainer>
+          <div className="flex flex-col gap-2 flex-1 pt-4">
+            {chartData.map((item, index) => (
+              <div key={item.category} className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <div 
+                    className="w-3 h-3 rounded-full flex-shrink-0" 
+                    style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                  />
+                  <span className="text-sm text-muted-foreground truncate">{item.category}</span>
+                </div>
+                <span className="text-sm font-medium flex-shrink-0">{item.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
