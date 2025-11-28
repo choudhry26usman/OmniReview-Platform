@@ -60,8 +60,19 @@ function normalizeSubject(subject: string): string {
   return normalized.toLowerCase();
 }
 
+interface EmailData {
+  id: string;
+  from?: { name?: string; email: string };
+  subject?: string;
+  body?: string;
+  receivedAt?: string;
+  threadId?: string;
+  inReplyTo?: string;
+  messageId?: string;
+}
+
 // Helper function to generate thread ID from email
-function generateThreadId(email: any): string {
+function generateThreadId(email: EmailData): string {
   // Priority 1: Use provider-supplied threadId if available
   if (email.threadId && typeof email.threadId === 'string') {
     return email.threadId;

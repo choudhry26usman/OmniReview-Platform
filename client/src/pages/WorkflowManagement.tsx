@@ -20,6 +20,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
+import type { Review, Product } from "@shared/schema";
 
 type Marketplace = "Amazon" | "Shopify" | "Walmart" | "Mailbox";
 type Sentiment = "positive" | "neutral" | "negative";
@@ -27,7 +28,7 @@ type Status = "open" | "in_progress" | "resolved";
 type Severity = "low" | "medium" | "high" | "critical";
 
 export default function WorkflowManagement() {
-  const [selectedReview, setSelectedReview] = useState<any | null>(null);
+  const [selectedReview, setSelectedReview] = useState<Review | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [dateRange, setDateRange] = useState<{ from: Date | undefined; to: Date | undefined }>({
     from: undefined,
@@ -90,14 +91,14 @@ export default function WorkflowManagement() {
     selectedRatings.length;
 
   // Fetch tracked products
-  const { data: productsData } = useQuery<{ products: any[] }>({
+  const { data: productsData } = useQuery<{ products: Product[] }>({
     queryKey: ['/api/products/tracked'],
   });
 
   const products = productsData?.products || [];
 
   // Fetch all imported reviews
-  const { data: importedReviewsData } = useQuery<{ reviews: any[]; total: number }>({
+  const { data: importedReviewsData } = useQuery<{ reviews: Review[]; total: number }>({
     queryKey: ["/api/reviews/imported"],
   });
 
@@ -219,7 +220,7 @@ export default function WorkflowManagement() {
         description: "Review status has been updated successfully.",
       });
     },
-    onError: (error: any) => {
+    onError: (error: Error) => {
       toast({
         title: "Update Failed",
         description: error.message || "Could not update review status. Please try again.",
@@ -228,8 +229,7 @@ export default function WorkflowManagement() {
     },
   });
 
-  const handleReviewMove = (reviewId: string, sourceColumn: string, destColumn: string) => {
-    console.log(`Review ${reviewId} moved from ${sourceColumn} to ${destColumn}`);
+  const handleReviewMove = (reviewId: string, _sourceColumn: string, destColumn: string) => {
     updateStatusMutation.mutate({ reviewId, status: destColumn });
   };
 

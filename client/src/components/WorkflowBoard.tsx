@@ -87,7 +87,6 @@ export function WorkflowBoard({ columns: initialColumns, onReviewMove, onCardCli
 
     setColumns(newColumns);
     onReviewMove?.(draggableId, source.droppableId, destination.droppableId);
-    console.log(`Moved review ${draggableId} from ${source.droppableId} to ${destination.droppableId}`);
   };
 
   return (

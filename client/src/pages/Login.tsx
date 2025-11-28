@@ -17,7 +17,6 @@ export default function Login() {
     e.preventDefault();
     
     if (username && password) {
-      console.log("Login attempt:", username);
       toast({
         title: "Login Successful",
         description: "Welcome to DriftSignal!",
