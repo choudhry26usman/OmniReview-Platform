@@ -26,6 +26,7 @@ The frontend uses Wouter for routing and TanStack Query for server state managem
 - **Product Tracking**: Automatically tracks imported products, updates last import timestamps, and prevents duplicate reviews.
 - **User Authentication**: Secure multi-user authentication via Replit Auth (OpenID Connect). Each user only sees their own reviews and products.
 - **Account Management**: User profile display in sidebar footer with dropdown menu for account settings and sign-out.
+- **AI Chatbot Assistant**: Floating chatbot button that opens a chat panel for answering common user questions about review management, navigation, and platform features. Powered by Grok AI.
 
 ### System Design Choices
 - **Data Storage**: Persistent PostgreSQL database via Neon serverless, using Drizzle ORM for schema definition (`reviews`, `products`, `users`, `sessions` tables).
