@@ -2,7 +2,7 @@
 
 ## 1. Quick Start (For Graders)
 * **Live App URL:** [https://replit.com/@reiddm1/DriftSignal](https://replit.com/@reiddm1/DriftSignal)
-* **Repository:** [https://github.com/choudhry26usman/OmniReview-Platform](https://github.com/choudhry26usman/OmniReview-Platform)
+* **GitHub Repository:** [https://github.com/choudhry26usman/DriftSignal](https://github.com/choudhry26usman/DriftSignal)
 
 ## 2. Authentication (Demo Mode)
 To access the dashboard, use the following pre-configured credentials:
