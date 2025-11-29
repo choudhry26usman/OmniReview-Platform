@@ -69,4 +69,4 @@ Due to the strict security audits required for live production access to Amazon'
 * **Technical Writer:** Mike Prince-Wright
 * **Product Marketing:** Mark Fiselier
 
-*Licensed under MIT.*
+*Licensed under the [MIT License](LICENSE).*
