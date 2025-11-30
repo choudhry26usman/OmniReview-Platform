@@ -58,10 +58,14 @@ export function isWalmartConfigured(): boolean {
 
 /**
  * Extract product ID from Walmart URL
+ * Supports both US (walmart.com) and Canada (walmart.ca) URLs
+ * US: https://www.walmart.com/ip/Product-Name/123456789
+ * Canada: https://www.walmart.ca/en/ip/Product-Name/2Z9L5F76Q5HD
  */
 function extractProductId(url: string): string | null {
-  // Walmart URLs typically look like: https://www.walmart.com/ip/Product-Name/123456789
-  const match = url.match(/\/ip\/[^/]+\/(\d+)/);
+  // Match both numeric IDs (US) and alphanumeric IDs (Canada)
+  // The ID is the last path segment after /ip/Product-Name/
+  const match = url.match(/\/ip\/[^/]+\/([A-Za-z0-9]+)/);
   return match ? match[1] : null;
 }
 
@@ -75,8 +79,9 @@ export async function fetchWalmartProduct(productUrl: string, fullSync: boolean 
     throw new Error("SERPAPI_KEY is not configured. Please add it to your environment variables.");
   }
 
-  if (!productUrl.includes('walmart.com')) {
-    throw new Error("Invalid Walmart URL. Please provide a valid walmart.com product URL.");
+  // Support both US (walmart.com) and Canada (walmart.ca) URLs
+  if (!productUrl.includes('walmart.com') && !productUrl.includes('walmart.ca')) {
+    throw new Error("Invalid Walmart URL. Please provide a valid walmart.com or walmart.ca product URL.");
   }
 
   // Extract product ID from URL
