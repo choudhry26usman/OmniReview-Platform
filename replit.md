@@ -45,10 +45,14 @@ The frontend uses Wouter for routing and TanStack Query for server state managem
   - **Base URL**: `axesso-axesso-amazon-data-service-v1.p.rapidapi.com`
   - **Endpoint**: `/amz/amazon-lookup-product`
   - **Note**: Returns ~8-10 reviews per product with proper product names. Simpler and more reliable than alternatives.
-- **SerpApi (Walmart)**: Fetches Walmart product reviews and details.
+- **SerpApi (Walmart US)**: Fetches US Walmart product reviews and details.
   - **Base URL**: `serpapi.com`
   - **Endpoints**: `/search.json?engine=walmart_product`, `/search.json?engine=walmart_product_reviews`
-  - **Note**: Only US Walmart (walmart.com) is supported. Walmart Canada (walmart.ca) is not available through SerpApi.
+  - **Note**: Only supports walmart.com URLs.
+- **Apify (Walmart Canada)**: Fetches Canadian Walmart product reviews via Apify actor.
+  - **Actor**: `tri_angle/walmart-reviews-scraper`
+  - **Supports**: walmart.ca URLs with alphanumeric product IDs
+  - **Note**: Uses sync API call - may take 30-60 seconds for results.
 - **OpenRouter + Grok 4.1 Fast**: Provides AI capabilities for review analysis and reply generation.
 
 ### Replit Platform Integration
