@@ -1,9 +1,10 @@
 /**
- * Walmart integration using SerpApi
+ * Walmart integration using SerpApi (US) and Apify (Canada)
  * Fetches product details and reviews from Walmart
  */
 
 const SERPAPI_KEY = process.env.SERPAPI_KEY;
+const APIFY_API_TOKEN = process.env.APIFY_API_TOKEN;
 
 interface WalmartReview {
   reviewText?: string;
@@ -50,10 +51,18 @@ export interface WalmartProductData {
 }
 
 /**
- * Check if Walmart/SerpApi is configured
+ * Check if Walmart integration is configured
+ * Returns true if either SerpApi (for US) or Apify (for Canada) is available
  */
 export function isWalmartConfigured(): boolean {
-  return !!SERPAPI_KEY;
+  return !!SERPAPI_KEY || !!APIFY_API_TOKEN;
+}
+
+/**
+ * Check if Walmart Canada is supported (requires Apify)
+ */
+export function isWalmartCanadaConfigured(): boolean {
+  return !!APIFY_API_TOKEN;
 }
 
 /**
@@ -70,23 +79,141 @@ function extractProductId(url: string): string | null {
 }
 
 /**
- * Fetch Walmart product details and reviews by product URL using SerpApi
- * @param productUrl - Full Walmart product URL (e.g., https://www.walmart.com/ip/...")
- * @param fullSync - If true, fetch all available pages of reviews
+ * Fetch Walmart Canada product details and reviews using Apify
+ * @param productUrl - Full Walmart.ca product URL
+ * @param maxReviews - Maximum number of reviews to fetch (default 50)
+ */
+async function fetchWalmartCanadaProduct(productUrl: string, maxReviews: number = 50): Promise<WalmartProductData> {
+  if (!APIFY_API_TOKEN) {
+    throw new Error("APIFY_API_TOKEN is not configured. Please add it to your environment variables.");
+  }
+
+  const productId = extractProductId(productUrl);
+  if (!productId) {
+    throw new Error("Could not extract product ID from URL. Please provide a valid Walmart.ca product URL.");
+  }
+
+  console.log('[Walmart.ca] Starting Apify actor for product:', productId);
+
+  try {
+    // Start the Apify actor run synchronously and get dataset items
+    const actorId = 'tri_angle~walmart-reviews-scraper';
+    const runUrl = `https://api.apify.com/v2/acts/${actorId}/run-sync-get-dataset-items?token=${APIFY_API_TOKEN}`;
+    
+    const response = await fetch(runUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        startUrls: [{ url: productUrl }],
+        maxProductsPerStartUrl: 1,
+        maxReviewsPerProduct: maxReviews
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Walmart.ca] Apify error response:', errorText);
+      
+      if (response.status === 401) {
+        throw new Error("Apify API authentication failed. Please verify your APIFY_API_TOKEN is correct.");
+      } else if (response.status === 402) {
+        throw new Error("Apify API usage limit exceeded. Please check your Apify account credits.");
+      } else {
+        throw new Error(`Apify API request failed with status ${response.status}`);
+      }
+    }
+
+    const data: any[] = await response.json();
+    console.log('[Walmart.ca] Apify returned', data.length, 'items');
+
+    if (!data || data.length === 0) {
+      return {
+        productName: 'Unknown Product',
+        productId,
+        reviews: [],
+        totalReviews: 0,
+        averageRating: 0
+      };
+    }
+
+    // Extract product name from the first item with product info
+    let productName = 'Unknown Product';
+    let totalRating = 0;
+    let ratingCount = 0;
+    
+    // Collect all reviews from the dataset
+    const reviews: WalmartReviewData[] = [];
+    
+    for (const item of data) {
+      // Try to get product name from any item that has it
+      if (item.productName || item.product_name || item.title) {
+        productName = item.productName || item.product_name || item.title;
+      }
+      
+      // Check if this item is a review
+      if (item.reviewText || item.review || item.text || item.content) {
+        const rating = item.rating || item.stars || 0;
+        reviews.push({
+          reviewerName: item.author || item.authorName || item.reviewer || item.reviewerName || 'Anonymous',
+          rating: typeof rating === 'number' ? rating : parseFloat(rating) || 0,
+          title: item.reviewTitle || item.title || '',
+          text: item.reviewText || item.review || item.text || item.content || '',
+          date: item.date || item.reviewDate || item.reviewSubmissionTime || new Date().toISOString()
+        });
+        
+        if (rating) {
+          totalRating += rating;
+          ratingCount++;
+        }
+      }
+    }
+
+    const averageRating = ratingCount > 0 ? totalRating / ratingCount : 0;
+
+    console.log(`[Walmart.ca] Found ${reviews.length} reviews for "${productName}"`);
+
+    return {
+      productName,
+      productId,
+      reviews,
+      totalReviews: reviews.length,
+      averageRating
+    };
+
+  } catch (error) {
+    console.error('[Walmart.ca] Error fetching product:', error);
+    if (error instanceof Error) {
+      throw error;
+    }
+    throw new Error('Failed to fetch Walmart Canada product data');
+  }
+}
+
+/**
+ * Fetch Walmart product details and reviews by product URL
+ * Routes to SerpApi (US) or Apify (Canada) based on URL
+ * @param productUrl - Full Walmart product URL
+ * @param fullSync - If true, fetch more reviews
  */
 export async function fetchWalmartProduct(productUrl: string, fullSync: boolean = false): Promise<WalmartProductData> {
+  // Check for Canadian Walmart - use Apify
+  if (productUrl.includes('walmart.ca')) {
+    if (!APIFY_API_TOKEN) {
+      throw new Error("Walmart Canada requires APIFY_API_TOKEN. Please add it to your environment variables.");
+    }
+    return fetchWalmartCanadaProduct(productUrl, fullSync ? 100 : 50);
+  }
+
+  // US Walmart - use SerpApi
   if (!SERPAPI_KEY) {
     throw new Error("SERPAPI_KEY is not configured. Please add it to your environment variables.");
   }
 
-  // Check for Canadian Walmart - not supported by SerpApi
-  if (productUrl.includes('walmart.ca')) {
-    throw new Error("Walmart Canada (walmart.ca) is not currently supported. The review API only works with US Walmart (walmart.com) products. Please provide a walmart.com product URL instead.");
-  }
-
-  // Only US Walmart is supported
+  // Only US Walmart is supported via SerpApi
   if (!productUrl.includes('walmart.com')) {
-    throw new Error("Invalid Walmart URL. Please provide a valid walmart.com product URL.");
+    throw new Error("Invalid Walmart URL. Please provide a valid walmart.com or walmart.ca product URL.");
   }
 
   // Extract product ID from URL
