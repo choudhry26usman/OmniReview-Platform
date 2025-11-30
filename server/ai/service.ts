@@ -185,7 +185,8 @@ Write a response that addresses their concern directly and professionally. Keep 
     max_tokens: 300,
   });
 
-  return response.trim();
+  const reply = response.trim();
+  return `${reply}\n\n- The Drift Signal Team`;
 }
 
 export interface EmailClassification {
@@ -443,7 +444,7 @@ Provide complete analysis in JSON format.`;
       customerEmotion: parsed.customerEmotion || "neutral",
       urgencyLevel: parsed.urgencyLevel || "moderate",
       recommendedActions: parsed.recommendedActions || [],
-      suggestedReply: parsed.suggestedReply || "",
+      suggestedReply: parsed.suggestedReply ? `${parsed.suggestedReply}\n\n- The Drift Signal Team` : "",
     };
   } catch (error) {
     console.error("Failed to parse combined AI response:", error);
