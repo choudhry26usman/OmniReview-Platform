@@ -255,7 +255,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       let imported = 0;
       let skipped = 0;
-      const importedReviews = [];
+      const importedReviews: any[] = [];
+      
+      // STEP 1: Pre-filter emails (skip duplicates and empty content before AI calls)
+      const emailsToProcess: Array<{
+        msg: any;
+        emailBody: string;
+        senderName: string;
+        senderEmail: string;
+        subject: string;
+        externalReviewId: string;
+      }> = [];
       
       for (const msg of rawEmails) {
         const rawEmailBody = msg.body?.content || msg.bodyPreview || '';
@@ -275,85 +285,120 @@ export async function registerRoutes(app: Express): Promise<Server> {
         const existingReview = await storage.checkReviewExists(externalReviewId, 'Mailbox', userId);
         
         if (existingReview) {
-          console.log(`Skipping duplicate review: ${subject}`);
+          console.log(`⊘ Skipping duplicate: ${subject}`);
           skipped++;
           continue;
         }
         
-        // Use SINGLE optimized AI call for complete email processing
-        // This combines: classification + product extraction + analysis + reply generation
-        const result = await processEmailComplete(subject, emailBody, senderName);
+        emailsToProcess.push({ msg, emailBody, senderName, senderEmail, subject, externalReviewId });
+      }
+      
+      console.log(`📧 Processing ${emailsToProcess.length} emails in parallel batches...`);
+      
+      // STEP 2: Process emails in parallel batches of 5
+      const BATCH_SIZE = 5;
+      
+      for (let i = 0; i < emailsToProcess.length; i += BATCH_SIZE) {
+        const batch = emailsToProcess.slice(i, i + BATCH_SIZE);
+        const batchNum = Math.floor(i / BATCH_SIZE) + 1;
+        const totalBatches = Math.ceil(emailsToProcess.length / BATCH_SIZE);
         
-        console.log(`Email "${subject}" - Review: ${result.isReviewOrComplaint} (${result.classificationConfidence}% confidence)`);
+        console.log(`⚡ Processing batch ${batchNum}/${totalBatches} (${batch.length} emails)...`);
         
-        if (result.isReviewOrComplaint && result.classificationConfidence > 50) {
-          console.log(`Product extraction: ${result.productName} (${result.productId}) - ${result.productConfidence}% confidence`);
-          
-          // Determine productId and productName
-          let productId = 'email-general';
-          let productName = 'General Email Inquiry';
-          
-          if (result.productId && result.productConfidence >= 50) {
-            productId = result.productId;
-            productName = result.productName || result.productId;
+        // Process batch in parallel
+        const batchResults = await Promise.allSettled(
+          batch.map(async ({ msg, emailBody, senderName, senderEmail, subject, externalReviewId }) => {
+            // Use SINGLE optimized AI call for complete email processing
+            const result = await processEmailComplete(subject, emailBody, senderName);
             
-            // Check if this product already exists for this user
-            const existingProduct = await storage.getProductByIdentifier('Mailbox', productId, userId);
+            console.log(`  "${subject.substring(0, 40)}..." - Review: ${result.isReviewOrComplaint} (${result.classificationConfidence}%)`);
             
-            if (!existingProduct) {
-              // Create new tracked product for email-extracted product
-              await storage.createProduct({
+            if (result.isReviewOrComplaint && result.classificationConfidence > 50) {
+              // Determine productId and productName
+              let productId = 'email-general';
+              let productName = 'General Email Inquiry';
+              
+              if (result.productId && result.productConfidence >= 50) {
+                productId = result.productId;
+                productName = result.productName || result.productId;
+                
+                // Check if this product already exists for this user
+                const existingProduct = await storage.getProductByIdentifier('Mailbox', productId, userId);
+                
+                if (!existingProduct) {
+                  // Create new tracked product for email-extracted product
+                  await storage.createProduct({
+                    userId,
+                    platform: 'Mailbox',
+                    productId,
+                    productName,
+                  });
+                  console.log(`  📦 Created product: ${productName}`);
+                }
+              }
+              
+              // Build analysis details from the combined result
+              const analysisDetails = {
+                sentiment: result.sentiment,
+                severity: result.severity,
+                category: result.category,
+                reasoning: result.reasoning,
+                specificIssues: result.specificIssues,
+                positiveAspects: result.positiveAspects,
+                keyPhrases: result.keyPhrases,
+                customerEmotion: result.customerEmotion,
+                urgencyLevel: result.urgencyLevel,
+                recommendedActions: result.recommendedActions,
+              };
+              
+              // Import as review (with userId)
+              const newReview = await storage.createReview({
                 userId,
-                platform: 'Mailbox',
+                externalReviewId,
+                marketplace: 'Mailbox',
                 productId,
-                productName,
+                title: subject,
+                content: emailBody.substring(0, 5000),
+                customerName: senderName,
+                customerEmail: senderEmail,
+                rating: result.sentiment === 'positive' ? 5 : result.sentiment === 'negative' ? 1 : 3,
+                sentiment: result.sentiment,
+                category: result.category,
+                severity: result.severity,
+                createdAt: new Date(msg.receivedDateTime),
+                status: 'open',
+                aiSuggestedReply: result.suggestedReply,
+                aiAnalysisDetails: JSON.stringify(analysisDetails),
+                verified: 0,
               });
-              console.log(`📦 Created tracked product: ${productName} (${productId})`);
+              
+              console.log(`  ✅ Imported: "${subject.substring(0, 40)}..." → ${productName}`);
+              return { imported: true, review: newReview };
+            } else {
+              return { imported: false };
             }
+          })
+        );
+        
+        // Count results from this batch
+        for (const result of batchResults) {
+          if (result.status === 'fulfilled') {
+            if (result.value.imported) {
+              imported++;
+              if (result.value.review) {
+                importedReviews.push(result.value.review);
+              }
+            } else {
+              skipped++;
+            }
+          } else {
+            console.error(`  ❌ Failed to process email:`, result.reason);
+            skipped++;
           }
-          
-          // Build analysis details from the combined result
-          const analysisDetails = {
-            sentiment: result.sentiment,
-            severity: result.severity,
-            category: result.category,
-            reasoning: result.reasoning,
-            specificIssues: result.specificIssues,
-            positiveAspects: result.positiveAspects,
-            keyPhrases: result.keyPhrases,
-            customerEmotion: result.customerEmotion,
-            urgencyLevel: result.urgencyLevel,
-            recommendedActions: result.recommendedActions,
-          };
-          
-          // Import as review (with userId)
-          const newReview = await storage.createReview({
-            userId,
-            externalReviewId,
-            marketplace: 'Mailbox',
-            productId,
-            title: subject,
-            content: emailBody.substring(0, 5000), // Limit content length
-            customerName: senderName,
-            customerEmail: senderEmail,
-            rating: result.sentiment === 'positive' ? 5 : result.sentiment === 'negative' ? 1 : 3,
-            sentiment: result.sentiment,
-            category: result.category,
-            severity: result.severity,
-            createdAt: new Date(msg.receivedDateTime),
-            status: 'open',
-            aiSuggestedReply: result.suggestedReply,
-            aiAnalysisDetails: JSON.stringify(analysisDetails),
-            verified: 0,
-          });
-          
-          importedReviews.push(newReview);
-          imported++;
-          console.log(`✅ Imported review from ${senderName}: "${subject}" → Product: ${productName}`);
-        } else {
-          skipped++;
         }
       }
+      
+      console.log(`✓ Email sync complete: ${imported} imported, ${skipped} skipped`);
       
       res.json({ 
         success: true,
