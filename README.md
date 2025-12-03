@@ -34,7 +34,7 @@ This project was built using **AI-Assisted Development** on Replit.
 
 ---
 
-## 🚀 Quick Start (Local & Replit)
+## Quick Start (Local & Replit)
 
 **Prerequisites:** Python 3.10+, OpenAI API Key.
 
@@ -64,7 +64,7 @@ This project was built using **AI-Assisted Development** on Replit.
 
 ---
 
-## 👥 The Team (Haskayne MBA)
+## 👥 The Drift Team (Haskayne MBA - ENTI633)
 * **Sam:** Strategy & Product Management
 * **Reid:** Development Lead
 * **Usman:** GitHub & Product Management 
