@@ -1798,8 +1798,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
         verified: boolean;
       }> = [];
       
+      // Helper function to generate a deterministic review ID for duplicate detection
+      const generateReviewId = (review: { text?: string; reviewerName?: string; title?: string; rating: number; date: string }) => {
+        // Create a deterministic ID based on review content
+        const content = `${review.reviewerName || 'anon'}-${review.rating}-${review.date}-${(review.text || '').substring(0, 50)}`;
+        // Simple hash function for deterministic ID
+        let hash = 0;
+        for (let i = 0; i < content.length; i++) {
+          const char = content.charCodeAt(i);
+          hash = ((hash << 5) - hash) + char;
+          hash = hash & hash; // Convert to 32bit integer
+        }
+        return `walmart-${productId}-${Math.abs(hash).toString(36)}`;
+      };
+      
+      // STEP 1: Pre-filter duplicates BEFORE making AI calls (saves API costs)
+      const reviewsToProcess: Array<{ review: typeof result.reviews[0]; externalId: string }> = [];
+      let preSkippedCount = 0;
+      
+      for (const review of result.reviews) {
+        const externalId = generateReviewId(review);
+        const exists = await storage.checkReviewExists(externalId, "Walmart", userId);
+        if (exists) {
+          console.log(`⊘ Skipping duplicate (pre-check): ${externalId}`);
+          preSkippedCount++;
+        } else {
+          reviewsToProcess.push({ review, externalId });
+        }
+      }
+      
+      console.log(`📋 ${reviewsToProcess.length} new reviews to process (${preSkippedCount} duplicates skipped)`);
+      
       // Helper function to process a single review
-      const processReview = async (review: { text?: string; reviewerName?: string; title?: string; rating: number; date: string }) => {
+      const processReview = async ({ review, externalId }: { review: typeof result.reviews[0]; externalId: string }) => {
         const reviewText = review.text || '';
         const userName = review.reviewerName || 'Anonymous';
         const reviewTitle = review.title || 'Review';
@@ -1807,11 +1838,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Run analysis and reply generation in parallel for each review
         const [analysis, aiReply] = await Promise.all([
           analyzeReview(reviewText, userName, "Walmart"),
-          generateReply(reviewText, userName, "Walmart", "neutral", "low") // Initial call, will be fast
+          generateReply(reviewText, userName, "Walmart", "neutral", "low")
         ]);
 
         return {
-          id: `walmart-${productId}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          id: externalId,
           marketplace: "Walmart" as const,
           title: reviewTitle,
           content: reviewText,
@@ -1828,19 +1859,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
         };
       };
       
-      // Process reviews in batches for controlled concurrency
-      for (let i = 0; i < result.reviews.length; i += CONCURRENCY_LIMIT) {
-        const batch = result.reviews.slice(i, i + CONCURRENCY_LIMIT);
-        console.log(`Processing batch ${Math.floor(i / CONCURRENCY_LIMIT) + 1}/${Math.ceil(result.reviews.length / CONCURRENCY_LIMIT)} (${batch.length} reviews)...`);
+      // STEP 2: Process non-duplicate reviews in batches
+      for (let i = 0; i < reviewsToProcess.length; i += CONCURRENCY_LIMIT) {
+        const batch = reviewsToProcess.slice(i, i + CONCURRENCY_LIMIT);
+        console.log(`⚡ Processing batch ${Math.floor(i / CONCURRENCY_LIMIT) + 1}/${Math.ceil(reviewsToProcess.length / CONCURRENCY_LIMIT)} (${batch.length} reviews)...`);
         
         const batchResults = await Promise.allSettled(batch.map(processReview));
         
         for (const result of batchResults) {
           if (result.status === 'fulfilled') {
             processedReviews.push(result.value);
-            console.log(`✓ Processed review from ${result.value.customerName} (${result.value.sentiment}/${result.value.severity})`);
+            console.log(`  ✓ ${result.value.customerName} (${result.value.sentiment}/${result.value.severity})`);
           } else {
-            console.error(`Failed to process review:`, result.reason);
+            console.error(`  ❌ Failed:`, result.reason);
           }
         }
       }
@@ -1854,9 +1885,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
           // Extract a unique review identifier if available
           const externalReviewId = processedReview.id;
           
-          // Check for duplicates
+          // Check for duplicates (include userId for proper scoping)
           if (externalReviewId) {
-            const exists = await storage.checkReviewExists(externalReviewId, "Walmart");
+            const exists = await storage.checkReviewExists(externalReviewId, "Walmart", userId);
             if (exists) {
               console.log(`⊘ Skipping duplicate review: ${externalReviewId}`);
               skippedCount++;
@@ -1907,11 +1938,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         console.log(`✓ Added product to tracking: "${productName}"`);
       }
 
-      console.log(`✓ Successfully imported ${importedCount} Walmart reviews for "${productName}" (${skippedCount} duplicates skipped)`);
+      const totalSkipped = preSkippedCount + skippedCount;
+      console.log(`✓ Successfully imported ${importedCount} Walmart reviews for "${productName}" (${totalSkipped} duplicates skipped)`);
       
       res.json({
         imported: importedCount,
-        skipped: skippedCount,
+        skipped: totalSkipped,
         productId,
         productName,
       });
